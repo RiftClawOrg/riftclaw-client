@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' wss://relay.riftclaw.com https://rift.riftclaw.com;">
+  <title>RiftClaw Traveler</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h2 id="loading-text">Traveling...</h2>
+      <p id="loading-subtext">Establishing connection to relay</p>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-left">
+      <span class="logo">🦞 RiftClaw</span>
+      <span id="connection-status" class="status disconnected">●</span>
+    </div>
+    <div class="top-center">
+      <span id="current-world">Limbo</span>
+      <span id="world-type" class="world-type local">Local</span>
+    </div>
+    <div class="top-right">
+      <button id="btn-inventory" class="btn-icon" title="Inventory (I)">🎒</button>
+      <button id="btn-passport" class="btn-icon" title="Passport (P)">🪪</button>
+      <button id="btn-home" class="btn-icon" title="Go to The Rift (H)">🏠</button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Limbo World (Local Three.js) -->
+    <div id="limbo-container" class="world-container active">
+      <iframe id="limbo-frame" src="worlds/limbo/index.html" sandbox="allow-scripts allow-same-origin"></iframe>
+    </div>
+
+    <!-- External World (Webview) -->
+    <div id="external-container" class="world-container">
+      <webview id="world-webview" 
+               sandbox="allow-scripts allow-same-origin"
+               nodeintegration="false"
+               contextisolation="true"
+               disablewebsecurity="false"
+               allowpopups="false">
+      </webview>
+    </div>
+  </div>
+
+  <!-- Inventory Overlay -->
+  <div id="inventory-overlay" class="inventory-overlay hidden">
+    <div class="inventory-panel">
+      <div class="inventory-header">
+        <h3>Inventory</h3>
+        <button id="btn-close-inventory" class="btn-close">×</button>
+      </div>
+      <div id="inventory-grid" class="inventory-grid">
+        <!-- Slots populated by JS -->
+      </div>
+      <div class="inventory-footer">
+        <span id="inventory-count">0 / 64 slots</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Passport Overlay -->
+  <div id="passport-overlay" class="passport-overlay hidden">
+    <div class="passport-card">
+      <div class="passport-header">
+        <h3>🪪 Traveler Passport</h3>
+        <button id="btn-close-passport" class="btn-close">×</button>
+      </div>
+      <div class="passport-body">
+        <div class="passport-field">
+          <label>Name</label>
+          <span id="passport-name">Traveler</span>
+        </div>
+        <div class="passport-field">
+          <label>ID</label>
+          <span id="passport-id" class="monospace">...</span>
+        </div>
+        <div class="passport-field">
+          <label>Home World</label>
+          <span id="passport-home">The Rift</span>
+        </div>
+        <div class="passport-field">
+          <label>Reputation</label>
+          <span id="passport-reputation">0.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div id="chat-panel" class="chat-panel">
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="Press Enter to chat..." maxlength="200">
+      <button id="btn-send-chat">➤</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app/main.js"></script>
+</body>
+</html>
