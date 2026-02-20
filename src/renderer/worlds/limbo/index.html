@@ -191,14 +191,28 @@
     let previousMousePosition = { x: 0, y: 0 };
     let yaw = 0;
     let pitch = 0;
-    
+
+    // Keys that Limbo handles (WASD + mouse)
+    const limboKeys = ['w', 'a', 's', 'd'];
+
     document.addEventListener('keydown', (e) => {
-      keys[e.key.toLowerCase()] = true;
+      const key = e.key.toLowerCase();
+      keys[key] = true;
+
+      // Forward non-limbo keys to parent
+      if (!limboKeys.includes(key) && window.parent !== window) {
+        console.log('[Limbo] Forwarding key to parent:', key);
+        window.parent.postMessage({ type: 'keypress', key: e.key }, '*');
+      }
     });
-    
+
     document.addEventListener('keyup', (e) => {
       keys[e.key.toLowerCase()] = false;
     });
+
+    // Focus this window for keyboard input
+    window.focus();
+    console.log('[Limbo] Window focused for keyboard input');
     
     document.addEventListener('mousedown', (e) => {
       isDragging = true;

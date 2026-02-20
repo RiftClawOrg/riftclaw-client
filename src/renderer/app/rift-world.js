@@ -23,7 +23,14 @@ class RiftWorldRenderer {
     canvas.id = 'rift-canvas';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
+    canvas.tabIndex = 0; // Make focusable
     this.container.appendChild(canvas);
+
+    // Focus canvas for keyboard input
+    canvas.focus();
+
+    // Setup keyboard controls
+    this.setupControls(canvas);
 
     // Three.js setup
     this.scene = new THREE.Scene();
@@ -55,6 +62,62 @@ class RiftWorldRenderer {
     window.addEventListener('resize', () => this.onResize());
 
     console.log('[RiftWorld] Initialized');
+  }
+
+  setupControls(canvas) {
+    const keys = {};
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+
+    // Keys that The Rift handles
+    const riftKeys = ['w', 'a', 's', 'd'];
+
+    canvas.addEventListener('keydown', (e) => {
+      const key = e.key.toLowerCase();
+      keys[key] = true;
+
+      // Only prevent default for WASD (allow other keys to bubble)
+      if (riftKeys.includes(key)) {
+        e.preventDefault();
+      }
+    });
+
+    canvas.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      previousMousePosition = { x: e.clientX, y: e.clientY };
+      canvas.focus();
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const deltaX = e.clientX - previousMousePosition.x;
+        const deltaY = e.clientY - previousMousePosition.y;
+
+        // Rotate camera
+        const yaw = deltaX * 0.005;
+        const pitch = deltaY * 0.005;
+
+        this.camera.rotation.order = 'YXZ';
+        this.camera.rotation.y -= yaw;
+        this.camera.rotation.x -= pitch;
+        this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
+
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+      }
+    });
+
+    // Store keys for use in animate
+    this.controls = { keys };
+
+    console.log('[RiftWorld] Controls setup');
   }
 
   buildWorld() {
@@ -189,6 +252,23 @@ class RiftWorldRenderer {
     requestAnimationFrame(() => this.animate());
 
     const time = Date.now() * 0.001;
+    const delta = 0.016; // Approx 60fps
+
+    // Handle movement if controls are setup
+    if (this.controls && this.controls.keys) {
+      const speed = 5 * delta;
+      const direction = new THREE.Vector3();
+
+      if (this.controls.keys['w']) direction.z -= 1;
+      if (this.controls.keys['s']) direction.z += 1;
+      if (this.controls.keys['a']) direction.x -= 1;
+      if (this.controls.keys['d']) direction.x += 1;
+
+      direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.camera.rotation.y);
+      direction.normalize();
+
+      this.camera.position.add(direction.multiplyScalar(speed));
+    }
 
     // Animate portals
     this.portals.forEach((portal, i) => {
@@ -229,3 +309,19 @@ class RiftWorldRenderer {
 if (typeof module !== 'undefined') {
   module.exports = RiftWorldRenderer;
 }
+
+// Keyboard forwarding for The Rift
+// Keys that The Rift handles (WASD + mouse)
+const riftKeys = ['w', 'a', 's', 'd'];
+
+document.addEventListener('keydown', (e) => {
+  const key = e.key.toLowerCase();
+
+  // Forward non-rift keys to parent
+  if (!riftKeys.includes(key) && window.parent !== window) {
+    console.log('[RiftWorld] Forwarding key to parent:', key);
+    window.parent.postMessage({ type: 'keypress', key: e.key }, '*');
+  }
+});
+
+console.log('[RiftWorld] Keyboard forwarding initialized');

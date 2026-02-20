@@ -708,14 +708,53 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Listen for messages from Limbo iframe
+// Listen for messages from iframes
 window.addEventListener('message', (e) => {
+  console.log('[Main] Message from iframe:', e.data);
+
   if (e.data.type === 'travel') {
     travelToWorld(e.data.world, e.data.url);
   } else if (e.data.type === 'chat') {
     sendChat();
+  } else if (e.data.type === 'keypress') {
+    // Forward key from iframe to our keyboard handler
+    console.log('[Main] Key forwarded from iframe:', e.data.key);
+    handleForwardedKey(e.data.key);
   }
 });
+
+// Handle keys forwarded from iframes
+function handleForwardedKey(key) {
+  const lowerKey = key.toLowerCase();
+  console.log('[Main] Handling forwarded key:', key);
+
+  switch (lowerKey) {
+    case 'i':
+      toggleInventory();
+      break;
+    case 'p':
+      togglePassport();
+      break;
+    case 'h':
+      toggleHelp();
+      break;
+    case 'g':
+      goHome();
+      break;
+    case 'o':
+      returnToLimbo();
+      break;
+    case 's':
+      toggleSettings();
+      break;
+    case 'escape':
+      inventoryOverlay.classList.add('hidden');
+      passportOverlay.classList.add('hidden');
+      helpOverlay.classList.add('hidden');
+      document.getElementById('settings-overlay')?.classList.add('hidden');
+      break;
+  }
+}
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', init);
