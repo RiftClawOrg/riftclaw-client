@@ -6,8 +6,8 @@ const WebSocket = require('ws');
 // Configuration
 const config = {
   RELAY_URL: 'wss://relay.riftclaw.com',
-  HOME_WORLD_URL: 'https://rift.riftclaw.com',  // The Rift server
-  APP_NAME: 'RiftClaw Traveler',
+  DEFAULT_WORLD_URL: 'https://rift.riftclaw.com',  // The Rift server
+  APP_NAME: 'RiftWalker',
   VERSION: '1.0.0'
 };
 
