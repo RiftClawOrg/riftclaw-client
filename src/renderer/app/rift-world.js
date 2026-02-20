@@ -12,6 +12,9 @@ class RiftWorldRenderer {
     this.camera = null;
     this.renderer = null;
     this.portals = [];
+    this.mechanics = null;
+    this.playerMesh = null;
+    this.onPortalEnter = null;
   }
 
   init() {
@@ -23,14 +26,8 @@ class RiftWorldRenderer {
     canvas.id = 'rift-canvas';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    canvas.tabIndex = 0; // Make focusable
+    canvas.tabIndex = 0;
     this.container.appendChild(canvas);
-
-    // Focus canvas for keyboard input
-    canvas.focus();
-
-    // Setup keyboard controls
-    this.setupControls(canvas);
 
     // Three.js setup
     this.scene = new THREE.Scene();
@@ -38,7 +35,6 @@ class RiftWorldRenderer {
     this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
     this.camera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 1.6, 5);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
@@ -55,69 +51,34 @@ class RiftWorldRenderer {
     // Build world from scene data
     this.buildWorld();
 
+    // Setup shared mechanics (3rd person + jumping)
+    this.mechanics = new WorldMechanics(this.camera, canvas);
+    this.mechanics.setOnPortalEnter((name, url) => {
+      if (this.onPortalEnter) this.onPortalEnter(name, url);
+    });
+
+    // Create player visual
+    this.createPlayerVisual();
+
     // Start render loop
     this.animate();
 
     // Handle resize
     window.addEventListener('resize', () => this.onResize());
 
-    console.log('[RiftWorld] Initialized');
+    console.log('[RiftWorld] Initialized with shared mechanics');
   }
 
-  setupControls(canvas) {
-    const keys = {};
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
-
-    // Keys that The Rift handles
-    const riftKeys = ['w', 'a', 's', 'd'];
-
-    canvas.addEventListener('keydown', (e) => {
-      const key = e.key.toLowerCase();
-      keys[key] = true;
-
-      // Only prevent default for WASD (allow other keys to bubble)
-      if (riftKeys.includes(key)) {
-        e.preventDefault();
-      }
+  createPlayerVisual() {
+    // Simple player representation (glowing cube)
+    const geometry = new THREE.BoxGeometry(0.5, 1.8, 0.5);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x00d5ff,
+      emissive: 0x00d5ff,
+      emissiveIntensity: 0.5
     });
-
-    canvas.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
-
-    canvas.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      previousMousePosition = { x: e.clientX, y: e.clientY };
-      canvas.focus();
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-      if (isDragging) {
-        const deltaX = e.clientX - previousMousePosition.x;
-        const deltaY = e.clientY - previousMousePosition.y;
-
-        // Rotate camera
-        const yaw = deltaX * 0.005;
-        const pitch = deltaY * 0.005;
-
-        this.camera.rotation.order = 'YXZ';
-        this.camera.rotation.y -= yaw;
-        this.camera.rotation.x -= pitch;
-        this.camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.camera.rotation.x));
-
-        previousMousePosition = { x: e.clientX, y: e.clientY };
-      }
-    });
-
-    // Store keys for use in animate
-    this.controls = { keys };
-
-    console.log('[RiftWorld] Controls setup');
+    this.playerMesh = new THREE.Mesh(geometry, material);
+    this.scene.add(this.playerMesh);
   }
 
   buildWorld() {
@@ -343,26 +304,21 @@ class RiftWorldRenderer {
     requestAnimationFrame(() => this.animate());
 
     const time = Date.now() * 0.001;
-    const delta = 0.016; // Approx 60fps
+    const delta = 0.016;
 
-    // Handle movement if controls are setup
-    if (this.controls && this.controls.keys) {
-      const speed = 5 * delta;
-      const direction = new THREE.Vector3();
+    // Update shared mechanics (movement, jumping, 3rd person camera)
+    if (this.mechanics) {
+      this.mechanics.update(delta);
 
-      if (this.controls.keys['w']) direction.z -= 1;
-      if (this.controls.keys['s']) direction.z += 1;
-      if (this.controls.keys['a']) direction.x -= 1;
-      if (this.controls.keys['d']) direction.x += 1;
+      // Update player visual position
+      if (this.playerMesh) {
+        const pos = this.mechanics.getPlayerPosition();
+        this.playerMesh.position.copy(pos);
+      }
 
-      direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.camera.rotation.y);
-      direction.normalize();
-
-      this.camera.position.add(direction.multiplyScalar(speed));
-
-      // Check for portal collisions after movement
-      if (!this.portalTriggered) {
-        this.checkPortalCollisions();
+      // Check portal collisions
+      if (this.portals.length > 0) {
+        this.mechanics.checkPortalCollisions(this.portals);
       }
     }
 
@@ -400,28 +356,6 @@ class RiftWorldRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  checkPortalCollisions() {
-    if (this.portalTriggered) return;
-
-    const playerPos = this.camera.position;
-    const portalRadius = 2.5;
-
-    for (const portal of this.portals) {
-      const portalPos = portal.position;
-      const distance = playerPos.distanceTo(portalPos);
-
-      if (distance < portalRadius) {
-        console.log('[Rift] Player entered portal:', portal.userData.name);
-        this.portalTriggered = true;
-
-        if (this.onPortalEnter) {
-          this.onPortalEnter(portal.userData.name, portal.userData.url);
-        }
-        break;
-      }
-    }
-  }
-
   setOnPortalEnter(callback) {
     this.onPortalEnter = callback;
   }
@@ -453,13 +387,7 @@ if (typeof module !== 'undefined') {
 const riftKeys = ['w', 'a', 's', 'd'];
 
 document.addEventListener('keydown', (e) => {
-  const key = e.key.toLowerCase();
-
-  // Forward non-rift keys to parent
-  if (!riftKeys.includes(key) && window.parent !== window) {
-    console.log('[RiftWorld] Forwarding key to parent:', key);
-    window.parent.postMessage({ type: 'keypress', key: e.key }, '*');
-  }
-});
-
-console.log('[RiftWorld] Keyboard forwarding initialized');
+// Export for use
+if (typeof module !== 'undefined') {
+  module.exports = RiftWorldRenderer;
+}

@@ -53,9 +53,6 @@ class LimboWorldRenderer {
     // Create player visual
     this.createPlayerVisual();
 
-    // Focus canvas
-    canvas.focus();
-
     // Start render loop
     this.animate();
 
@@ -299,47 +296,6 @@ class LimboWorldRenderer {
     // Store initial intensity for pulsing
     this.portalGlowIntensity = 2;
   }
-
-  setupControls(canvas) {
-    // Keys that Limbo handles (WASD)
-    const limboKeys = ['w', 'a', 's', 'd'];
-
-    canvas.addEventListener('keydown', (e) => {
-      const key = e.key.toLowerCase();
-      this.controls.keys[key] = true;
-
-      // Only prevent default for WASD
-      if (limboKeys.includes(key)) {
-        e.preventDefault();
-      }
-    });
-
-    canvas.addEventListener('keyup', (e) => {
-      this.controls.keys[e.key.toLowerCase()] = false;
-    });
-
-    canvas.addEventListener('mousedown', (e) => {
-      this.isDragging = true;
-      this.previousMousePosition = { x: e.clientX, y: e.clientY };
-      canvas.focus();
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      this.isDragging = false;
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-      if (this.isDragging) {
-        const deltaX = e.clientX - this.previousMousePosition.x;
-        const deltaY = e.clientY - this.previousMousePosition.y;
-
-        this.yaw -= deltaX * 0.005;
-        this.pitch -= deltaY * 0.005;
-        this.pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.pitch));
-
-        this.previousMousePosition = { x: e.clientX, y: e.clientY };
-      }
-    });
 
   animate() {
     requestAnimationFrame(() => this.animate());
