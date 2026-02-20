@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, clipboard, Menu } = require('electron');
 const path = require('path');
 const Store = require('electron-store');
 const WebSocket = require('ws');
@@ -64,6 +64,57 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
+  });
+
+  // Add context menu with Copy All functionality
+  mainWindow.webContents.on('context-menu', (event, params) => {
+    const menu = Menu.buildFromTemplate([
+      {
+        label: 'Copy',
+        accelerator: 'CmdOrCtrl+C',
+        role: 'copy',
+        enabled: params.editFlags.canCopy
+      },
+      {
+        label: 'Copy All',
+        click: () => {
+          mainWindow.webContents.executeJavaScript(`
+            (function() {
+              const logs = [];
+              const styles = document.querySelectorAll('.console-message');
+              styles.forEach(el => {
+                logs.push(el.textContent);
+              });
+              return logs.join('\n');
+            })()
+          `).then(text => {
+            if (text) {
+              clipboard.writeText(text);
+              console.log('[Context Menu] Copied all console output');
+            }
+          }).catch(err => {
+            // Fallback: try to get all text from page
+            mainWindow.webContents.executeJavaScript(`document.body.innerText`).then(bodyText => {
+              clipboard.writeText(bodyText);
+              console.log('[Context Menu] Copied page content');
+            });
+          });
+        }
+      },
+      { type: 'separator' },
+      {
+        label: 'Select All',
+        accelerator: 'CmdOrCtrl+A',
+        role: 'selectAll'
+      },
+      {
+        label: 'Inspect Element',
+        click: () => {
+          mainWindow.webContents.inspectElement(params.x, params.y);
+        }
+      }
+    ]);
+    menu.popup();
   });
 }
 
