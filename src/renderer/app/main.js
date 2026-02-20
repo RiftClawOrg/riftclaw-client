@@ -163,28 +163,102 @@ function handleHandoffConfirm(message) {
 
 // Load a world (scene JSON)
 function loadWorld(scene) {
-  console.log('[Renderer] Loading world:', scene.name);
-  
+  console.log('[Renderer] Loading world:', scene.name, scene);
+
   // Update UI
   currentWorld = scene.name || 'Unknown';
   currentWorldEl.textContent = currentWorld;
   worldTypeEl.textContent = 'Remote';
   worldTypeEl.classList.remove('local');
   worldTypeEl.classList.add('remote');
-  
-  // Switch to webview for external worlds
+
+  // Switch to external container
   limboContainer.classList.remove('active');
   externalContainer.classList.add('active');
-  
-  // Load the world URL
-  if (scene.url || scene.world_url) {
-    worldWebview.src = scene.url || scene.world_url;
+
+  // Check if this is The Rift (render locally) or external world (load URL)
+  const worldUrl = scene.url || scene.world_url;
+  const isRift = scene.name?.toLowerCase().includes('rift') ||
+                 currentWorld.toLowerCase().includes('rift');
+
+  if (isRift && !worldUrl?.startsWith('http')) {
+    // Render The Rift locally
+    console.log('[Renderer] Rendering The Rift locally');
+    renderRiftWorld(scene);
+  } else if (worldUrl) {
+    // Load external world in webview
+    console.log('[Renderer] Loading external world URL:', worldUrl);
+    worldWebview.src = worldUrl;
+  } else {
+    console.error('[Renderer] No world URL provided and not The Rift');
+    showToast('Failed to load world - no URL', 'error');
   }
-  
+
   // Track world change
   window.rift.setCurrentWorld(currentWorld);
-  
+
   updateInventoryUI();
+}
+
+// Render The Rift world locally
+let riftRenderer = null;
+function renderRiftWorld(scene) {
+  // Clear webview
+  worldWebview.src = '';
+
+  // Destroy previous renderer
+  if (riftRenderer) {
+    riftRenderer.destroy();
+    riftRenderer = null;
+  }
+
+  // Create new renderer
+  const container = document.getElementById('external-container');
+  riftRenderer = new RiftWorldRenderer(container, scene);
+  riftRenderer.init();
+
+  // Setup click handling for portals
+  setupRiftClickHandler(riftRenderer);
+
+  console.log('[Renderer] The Rift rendered');
+}
+
+// Setup click handler for Rift portals
+function setupRiftClickHandler(renderer) {
+  const container = document.getElementById('external-container');
+  const canvas = container.querySelector('canvas');
+
+  if (!canvas) return;
+
+  canvas.addEventListener('click', (e) => {
+    console.log('[Rift] Click detected at:', e.clientX, e.clientY);
+
+    // Calculate mouse position
+    const rect = canvas.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+
+    // Raycast to find clicked portal
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, renderer.camera);
+
+    const portals = renderer.getPortals();
+    for (const portal of portals) {
+      const intersects = raycaster.intersectObject(portal, true);
+      if (intersects.length > 0) {
+        console.log('[Rift] Portal clicked:', portal.userData.name, portal.userData.url);
+
+        if (portal.userData.url === 'local' || portal.userData.name === 'Limbo') {
+          returnToLimbo();
+        } else {
+          travelToWorld(portal.userData.name, portal.userData.url);
+        }
+        break;
+      }
+    }
+  });
 }
 
 // Travel to a world
@@ -299,25 +373,45 @@ function setupUIListeners() {
 // Setup keyboard shortcuts
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT') return;
-    
+    console.log('[Keyboard] Key pressed:', e.key, 'Target:', e.target.tagName);
+
+    if (e.target.tagName === 'INPUT') {
+      console.log('[Keyboard] Ignoring - input focused');
+      return;
+    }
+
     switch (e.key.toLowerCase()) {
       case 'i':
+        console.log('[Keyboard] Toggling inventory');
         toggleInventory();
         break;
       case 'p':
+        console.log('[Keyboard] Toggling passport');
         togglePassport();
         break;
       case 'h':
+        console.log('[Keyboard] Going home');
         goHome();
         break;
       case 'o':
+        console.log('[Keyboard] Returning to limbo');
         returnToLimbo();
         break;
       case 's':
+        console.log('[Keyboard] Toggling settings');
         toggleSettings();
         break;
+      case 'w':
+      case 'a':
+      case 's':
+      case 'd':
+        // WASD debugging - only log if we're in limbo
+        if (currentWorld === 'Limbo') {
+          console.log('[Keyboard] WASD in Limbo:', e.key);
+        }
+        break;
       case 'escape':
+        console.log('[Keyboard] Escape - closing overlays');
         inventoryOverlay.classList.add('hidden');
         passportOverlay.classList.add('hidden');
         document.getElementById('settings-overlay').classList.add('hidden');

@@ -99,7 +99,8 @@ src/
 - Local Three.js rendering
 
 ### The Rift (Remote)
-- Central hub server
+- Central hub server (headless API)
+- Client renders The Rift locally using scene JSON
 - Multiple portals to other worlds
 - Persistent inventory
 - Connected via relay
@@ -109,6 +110,20 @@ src/
 - Loaded in sandboxed webview
 - Scene JSON protocol
 - Inventory sync on travel
+
+## 🌍 World Rendering
+
+The client handles two types of worlds:
+
+1. **Local Worlds** (Limbo, The Rift)
+   - Rendered locally with Three.js
+   - Scene JSON from server describes portals/assets
+   - Client builds 3D scene dynamically
+
+2. **External Worlds**
+   - Loaded in sandboxed webview
+   - World provides its own HTML/Three.js
+   - Communicates via postMessage
 
 ## 🛠️ Development
 
