@@ -132,11 +132,13 @@ Edit `src/main/index.js`:
 ```javascript
 const config = {
   RELAY_URL: 'wss://relay.riftclaw.com',
-  DEFAULT_WORLD: 'the-rift',
-  WINDOW_WIDTH: 1280,
-  WINDOW_HEIGHT: 720
+  HOME_WORLD_URL: 'https://rift.riftclaw.com',  // The Rift server URL
+  APP_NAME: 'RiftClaw Traveler',
+  VERSION: '1.0.0'
 };
 ```
+
+**Note:** `HOME_WORLD_URL` is the full URL to your riftclaw-server instance. The `goHome()` function in `src/renderer/app/main.js` uses this URL to travel to The Rift.
 
 ## 📡 Protocol
 

@@ -94,7 +94,18 @@ function handleRelayMessage(message) {
       
     case 'handoff_rejected':
       hideLoading();
-      showToast(`Travel failed: ${message.reason}`, 'error');
+      const errorMessages = {
+        'low_reputation': 'Handoff rejected: Low reputation',
+        'invalid_signature': 'Handoff rejected: Invalid passport signature',
+        'passport_expired': 'Handoff rejected: Passport expired',
+        'invalid_inventory': 'Handoff rejected: Invalid inventory data',
+        'processing_error': 'Handoff rejected: Server error',
+        'server_full': 'Handoff rejected: World is full',
+        'banned': 'Handoff rejected: You are banned from this world'
+      };
+      const errorMsg = errorMessages[message.reason] || `Handoff rejected: ${message.reason}`;
+      showToast(errorMsg, 'error');
+      console.error('[Handoff] Rejected:', message.reason, message.message);
       break;
       
     case 'chat':
@@ -224,6 +235,17 @@ function goHome() {
   travelToWorld('the-rift', 'https://rift.riftclaw.com');
 }
 
+// Settings state
+let settings = {
+  relayUrl: 'wss://relay.riftclaw.com',
+  volume: 80,
+  muteOnStartup: true,
+  bookmarks: [
+    { name: 'The Rift', url: 'https://rift.riftclaw.com' },
+    { name: 'Arena', url: 'https://arena.riftclaw.com' }
+  ]
+};
+
 // Setup UI event listeners
 function setupUIListeners() {
   // Inventory button
@@ -233,6 +255,18 @@ function setupUIListeners() {
   // Passport button
   document.getElementById('btn-passport').addEventListener('click', togglePassport);
   document.getElementById('btn-close-passport').addEventListener('click', togglePassport);
+  
+  // Settings button
+  document.getElementById('btn-settings').addEventListener('click', toggleSettings);
+  document.getElementById('btn-close-settings').addEventListener('click', toggleSettings);
+  document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
+  document.getElementById('btn-reset-settings').addEventListener('click', resetSettings);
+  document.getElementById('btn-add-bookmark').addEventListener('click', addBookmark);
+  
+  // Volume slider
+  document.getElementById('setting-volume').addEventListener('input', (e) => {
+    document.getElementById('volume-value').textContent = e.target.value + '%';
+  });
   
   // Home button
   document.getElementById('btn-home').addEventListener('click', goHome);
@@ -262,9 +296,13 @@ function setupKeyboardShortcuts() {
       case 'o':
         returnToLimbo();
         break;
+      case 's':
+        toggleSettings();
+        break;
       case 'escape':
         inventoryOverlay.classList.add('hidden');
         passportOverlay.classList.add('hidden');
+        document.getElementById('settings-overlay').classList.add('hidden');
         break;
     }
   });
@@ -323,11 +361,112 @@ function updateInventoryUI() {
 // Update passport UI
 function updatePassportUI() {
   if (!passport) return;
-  
+
   document.getElementById('passport-name').textContent = passport.agent_name || 'Traveler';
   document.getElementById('passport-id').textContent = passport.agent_id;
   document.getElementById('passport-home').textContent = passport.home_world || 'The Rift';
-  document.getElementById('passport-reputation').textContent = passport.reputation || '0.0';
+
+  const reputation = parseFloat(passport.reputation) || 0;
+  document.getElementById('passport-reputation').textContent = reputation.toFixed(1);
+
+  // Calculate level from reputation
+  const level = Math.floor(reputation / 10) + 1;
+  const titles = ['Novice', 'Traveler', 'Explorer', 'Veteran', 'Master', 'Legend'];
+  const title = titles[Math.min(level - 1, titles.length - 1)];
+  document.getElementById('passport-level').textContent = `${level} (${title})`;
+}
+
+// Toggle settings overlay
+function toggleSettings() {
+  const settingsOverlay = document.getElementById('settings-overlay');
+  settingsOverlay.classList.toggle('hidden');
+
+  if (!settingsOverlay.classList.contains('hidden')) {
+    loadSettingsUI();
+  }
+}
+
+// Load settings into UI
+function loadSettingsUI() {
+  document.getElementById('setting-relay-url').value = settings.relayUrl;
+  document.getElementById('setting-volume').value = settings.volume;
+  document.getElementById('volume-value').textContent = settings.volume + '%';
+  document.getElementById('setting-mute').checked = settings.muteOnStartup;
+  renderBookmarks();
+}
+
+// Render bookmarks list
+function renderBookmarks() {
+  const list = document.getElementById('bookmarks-list');
+  list.innerHTML = '';
+
+  if (settings.bookmarks.length === 0) {
+    list.innerHTML = '<p style="color: #888; text-align: center;">No bookmarks</p>';
+    return;
+  }
+
+  settings.bookmarks.forEach((bookmark, index) => {
+    const item = document.createElement('div');
+    item.className = 'bookmark-item';
+    item.innerHTML = `
+      <div>
+        <div class="bookmark-name">${escapeHtml(bookmark.name)}</div>
+        <div class="bookmark-url">${escapeHtml(bookmark.url)}</div>
+      </div>
+      <button class="btn-delete" onclick="deleteBookmark(${index})">Delete</button>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// Add new bookmark
+function addBookmark() {
+  const name = prompt('Bookmark name:');
+  if (!name) return;
+
+  const url = prompt('World URL:');
+  if (!url) return;
+
+  settings.bookmarks.push({ name, url });
+  renderBookmarks();
+}
+
+// Delete bookmark
+function deleteBookmark(index) {
+  if (confirm('Delete this bookmark?')) {
+    settings.bookmarks.splice(index, 1);
+    renderBookmarks();
+  }
+}
+
+// Save settings
+function saveSettings() {
+  settings.relayUrl = document.getElementById('setting-relay-url').value;
+  settings.volume = parseInt(document.getElementById('setting-volume').value);
+  settings.muteOnStartup = document.getElementById('setting-mute').checked;
+
+  // TODO: Save to storage via IPC
+  console.log('[Settings] Saved:', settings);
+
+  toggleSettings();
+  showToast('Settings saved', 'success');
+}
+
+// Reset settings to defaults
+function resetSettings() {
+  if (confirm('Reset all settings to defaults?')) {
+    settings = {
+      relayUrl: 'wss://relay.riftclaw.com',
+      volume: 80,
+      muteOnStartup: true,
+      bookmarks: [
+        { name: 'The Rift', url: 'https://rift.riftclaw.com' },
+        { name: 'Arena', url: 'https://arena.riftclaw.com' }
+      ]
+    };
+    loadSettingsUI();
+    showToast('Settings reset to defaults', 'success');
+  }
 }
 
 // Send chat message

@@ -34,6 +34,7 @@
       <button id="btn-inventory" class="btn-icon" title="Inventory (I)">🎒</button>
       <button id="btn-passport" class="btn-icon" title="Passport (P)">🪪</button>
       <button id="btn-home" class="btn-icon" title="Go to The Rift (H)">🏠</button>
+      <button id="btn-settings" class="btn-icon" title="Settings (S)">⚙️</button>
     </div>
   </div>
 
@@ -95,6 +96,57 @@
         <div class="passport-field">
           <label>Reputation</label>
           <span id="passport-reputation">0.0</span>
+        </div>
+        <div class="passport-field">
+          <label>Level</label>
+          <span id="passport-level">1 (Novice)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settings-overlay" class="settings-overlay hidden">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <h3>⚙️ Settings</h3>
+        <button id="btn-close-settings" class="btn-close">×</button>
+      </div>
+      <div class="settings-body">
+        <div class="settings-section">
+          <h4>Connection</h4>
+          <div class="setting-row">
+            <label>Relay URL</label>
+            <input type="text" id="setting-relay-url" value="wss://relay.riftclaw.com">
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h4>Audio</h4>
+          <div class="setting-row">
+            <label>Master Volume</label>
+            <input type="range" id="setting-volume" min="0" max="100" value="80">
+            <span id="volume-value">80%</span>
+          </div>
+          <div class="setting-row">
+            <label>
+              <input type="checkbox" id="setting-mute" checked>
+              Mute on startup
+            </label>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h4>World Bookmarks</h4>
+          <div id="bookmarks-list" class="bookmarks-list">
+            <!-- Populated by JS -->
+          </div>
+          <button id="btn-add-bookmark" class="btn-secondary">+ Add Bookmark</button>
+        </div>
+        
+        <div class="settings-footer">
+          <button id="btn-save-settings" class="btn-primary">Save Settings</button>
+          <button id="btn-reset-settings" class="btn-secondary">Reset to Defaults</button>
         </div>
       </div>
     </div>
