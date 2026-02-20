@@ -441,7 +441,7 @@ function setupKeyboardShortcuts() {
         returnToLimbo();
         e.preventDefault();
         break;
-      case 's':
+      case ',':
         console.log('[Keyboard] Toggling settings');
         toggleSettings();
         e.preventDefault();
@@ -744,7 +744,7 @@ function handleForwardedKey(key) {
     case 'o':
       returnToLimbo();
       break;
-    case 's':
+    case ',':
       toggleSettings();
       break;
     case 'escape':

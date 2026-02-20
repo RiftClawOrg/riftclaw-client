@@ -51,14 +51,15 @@ npm run build
 
 | Key | Action |
 |-----|--------|
-| `WASD` | Move (in Limbo - click in world first) |
+| `WASD` | Move around (in 3D worlds) |
 | `Mouse` | Look around (click-drag) |
 | `Click` | Interact / Travel through portal |
 | `I` | Toggle inventory |
 | `P` | Toggle passport |
-| `S` | Toggle settings |
-| `H` | Go to The Rift (home) |
+| `H` | Help menu |
+| `G` | Go to The Rift (home) |
 | `O` | Return to Limbo |
+| `,` | Toggle settings |
 | `Enter` | Focus chat |
 | `Esc` | Close overlays |
 
@@ -111,19 +112,48 @@ src/
 - Scene JSON protocol
 - Inventory sync on travel
 
-## 🌍 World Rendering
+## 🌍 World Rendering & Architecture
 
-The client handles two types of worlds:
+The client handles three types of worlds differently:
 
-1. **Local Worlds** (Limbo, The Rift)
-   - Rendered locally with Three.js
-   - Scene JSON from server describes portals/assets
-   - Client builds 3D scene dynamically
+### 1. Limbo (Local iframe)
+- **Why iframe?** Limbo is a separate HTML file (`worlds/limbo/index.html`) that runs independently
+- Isolated browsing context (security sandbox)
+- Forwards non-WASD keys to parent via postMessage
+- Local file, loaded via `file://` protocol
 
-2. **External Worlds**
-   - Loaded in sandboxed webview
-   - World provides its own HTML/Three.js
-   - Communicates via postMessage
+### 2. The Rift (Local renderer)
+- **Why not iframe?** The Rift server is a headless API (no visual HTML page)
+- Client renders The Rift locally using JavaScript (`RiftWorldRenderer` class)
+- Creates Three.js scene directly in main renderer process
+- Receives scene JSON from server, builds world dynamically
+- Full control over rendering and controls
+
+### 3. External Worlds (Webview/iframe)
+- Arena, Forest, Minecraft, etc.
+- Loaded in sandboxed webview from external URLs
+- World provides its own HTML/Three.js
+- Communicates via postMessage
+
+```
+┌─────────────────────────────────────────┐
+│  Electron Renderer Process              │
+│                                         │
+│  ┌──────────────┐  ┌─────────────────┐ │
+│  │   Limbo      │  │   The Rift      │ │
+│  │   (iframe)   │  │   (local JS)    │ │
+│  │  ┌────────┐  │  │  ┌───────────┐  │ │
+│  │  │Three.js│  │  │  │Three.js   │  │ │
+│  │  │(isolated)│  │  │  │(direct)   │  │ │
+│  │  └────────┘  │  │  └───────────┘  │ │
+│  └──────────────┘  └─────────────────┘ │
+│                                         │
+│  ┌─────────────────────────────────────┐│
+│  │         UI Layer (main.js)          ││
+│  │   Inventory, Passport, Chat, etc.   ││
+│  └─────────────────────────────────────┘│
+└─────────────────────────────────────────┘
+```
 
 ## 🛠️ Development
 
