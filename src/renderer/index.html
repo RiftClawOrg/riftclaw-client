@@ -33,7 +33,8 @@
     <div class="top-right">
       <button id="btn-inventory" class="btn-icon" title="Inventory (I)">🎒</button>
       <button id="btn-passport" class="btn-icon" title="Passport (P)">🪪</button>
-      <button id="btn-home" class="btn-icon" title="Go to The Rift (H)">🏠</button>
+      <button id="btn-home" class="btn-icon" title="Go to The Rift (G)">🏠</button>
+      <button id="btn-help" class="btn-icon" title="Help (H)">❓</button>
       <button id="btn-settings" class="btn-icon" title="Settings (S)">⚙️</button>
     </div>
   </div>
@@ -100,6 +101,87 @@
         <div class="passport-field">
           <label>Level</label>
           <span id="passport-level">1 (Novice)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Overlay -->
+  <div id="help-overlay" class="help-overlay hidden">
+    <div class="help-panel">
+      <div class="help-header">
+        <h3>⌨️ Controls & Help</h3>
+        <button id="btn-close-help" class="btn-close">×</button>
+      </div>
+      <div class="help-body">
+        <div class="help-section">
+          <h4>Movement</h4>
+          <div class="help-item">
+            <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+            <span>Move around (click in world first)</span>
+          </div>
+          <div class="help-item">
+            <kbd>Mouse</kbd>
+            <span>Look around (click and drag)</span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h4>Menus</h4>
+          <div class="help-item">
+            <kbd>I</kbd>
+            <span>Toggle Inventory</span>
+          </div>
+          <div class="help-item">
+            <kbd>P</kbd>
+            <span>Toggle Passport</span>
+          </div>
+          <div class="help-item">
+            <kbd>S</kbd>
+            <span>Toggle Settings</span>
+          </div>
+          <div class="help-item">
+            <kbd>H</kbd>
+            <span>Show this Help</span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h4>Travel</h4>
+          <div class="help-item">
+            <kbd>H</kbd>
+            <span>Go to The Rift (home)</span>
+          </div>
+          <div class="help-item">
+            <kbd>O</kbd>
+            <span>Return to Limbo</span>
+          </div>
+          <div class="help-item">
+            <span>Click Portal</span>
+            <span>Travel to that world</span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h4>Chat</h4>
+          <div class="help-item">
+            <kbd>Enter</kbd>
+            <span>Focus chat input</span>
+          </div>
+          <div class="help-item">
+            <kbd>Esc</kbd>
+            <span>Close overlays / unfocus chat</span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <h4>Tips</h4>
+          <ul class="help-tips">
+            <li>💡 Click in the 3D world before using WASD</li>
+            <li>💡 Your inventory syncs between worlds</li>
+            <li>💡 Reputation unlocks new portals</li>
+            <li>💡 Press Esc to close any menu</li>
+          </ul>
         </div>
       </div>
     </div>

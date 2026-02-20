@@ -23,6 +23,7 @@ const externalContainer = document.getElementById('external-container');
 const worldWebview = document.getElementById('world-webview');
 const inventoryOverlay = document.getElementById('inventory-overlay');
 const passportOverlay = document.getElementById('passport-overlay');
+const helpOverlay = document.getElementById('help-overlay');
 const inventoryGrid = document.getElementById('inventory-grid');
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
@@ -136,9 +137,9 @@ function handleRelayMessage(message) {
 // Handle handoff confirm (arrival at new world)
 function handleHandoffConfirm(message) {
   console.log('[Renderer] Handoff confirmed:', message);
-  
-  const { scene, passport: newPassport } = message;
-  
+
+  const { scene, passport: newPassport, target_world, target_url } = message;
+
   // Update passport with new inventory
   if (newPassport) {
     passport = newPassport;
@@ -151,14 +152,40 @@ function handleHandoffConfirm(message) {
       }
     }
   }
-  
+
   // Load the new world
-  if (scene) {
-    loadWorld(scene);
+  let worldScene = scene;
+
+  // If no scene provided, create default for The Rift
+  if (!worldScene && target_world === 'the-rift') {
+    console.log('[Renderer] No scene data, creating default for The Rift');
+    worldScene = createDefaultRiftScene();
   }
-  
-  hideLoading();
-  showToast(`Welcome to ${scene?.name || 'new world'}!`, 'success');
+
+  if (worldScene) {
+    console.log('[Renderer] Loading world scene:', worldScene);
+    loadWorld(worldScene);
+    hideLoading();
+    showToast(`Welcome to ${worldScene.name || target_world}!`, 'success');
+  } else {
+    console.error('[Renderer] No scene data and no default available');
+    hideLoading();
+    showToast('Arrived but no world data received', 'warning');
+  }
+}
+
+// Create default scene for The Rift
+function createDefaultRiftScene() {
+  return {
+    name: 'The Rift',
+    description: 'Central hub for all travelers',
+    spawn_point: { x: 0, y: 1.6, z: 5 },
+    portals: [
+      { id: 'portal_limbo', name: 'Limbo', url: 'local' },
+      { id: 'portal_arena', name: 'Arena', url: 'https://arena.riftclaw.com' },
+      { id: 'portal_forest', name: 'Forest', url: 'https://forest.riftclaw.com' }
+    ]
+  };
 }
 
 // Load a world (scene JSON)
@@ -362,7 +389,11 @@ function setupUIListeners() {
   document.getElementById('limbo-frame').addEventListener('click', () => {
     document.getElementById('limbo-frame').focus();
   });
-  
+
+  // Help button
+  document.getElementById('btn-help')?.addEventListener('click', toggleHelp);
+  document.getElementById('btn-close-help')?.addEventListener('click', toggleHelp);
+
   // Chat
   document.getElementById('btn-send-chat').addEventListener('click', sendChat);
   chatInput.addEventListener('keypress', (e) => {
@@ -373,10 +404,14 @@ function setupUIListeners() {
 // Setup keyboard shortcuts
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
-    console.log('[Keyboard] Key pressed:', e.key, 'Target:', e.target.tagName);
+    console.log('[Keyboard] Key pressed:', e.key, 'Target:', e.target.tagName, 'Current world:', currentWorld);
 
     if (e.target.tagName === 'INPUT') {
       console.log('[Keyboard] Ignoring - input focused');
+      // Allow Escape to unfocus input
+      if (e.key === 'Escape') {
+        e.target.blur();
+      }
       return;
     }
 
@@ -384,22 +419,32 @@ function setupKeyboardShortcuts() {
       case 'i':
         console.log('[Keyboard] Toggling inventory');
         toggleInventory();
+        e.preventDefault();
         break;
       case 'p':
         console.log('[Keyboard] Toggling passport');
         togglePassport();
+        e.preventDefault();
         break;
       case 'h':
+        console.log('[Keyboard] Showing help');
+        toggleHelp();
+        e.preventDefault();
+        break;
+      case 'g':
         console.log('[Keyboard] Going home');
         goHome();
+        e.preventDefault();
         break;
       case 'o':
         console.log('[Keyboard] Returning to limbo');
         returnToLimbo();
+        e.preventDefault();
         break;
       case 's':
         console.log('[Keyboard] Toggling settings');
         toggleSettings();
+        e.preventDefault();
         break;
       case 'w':
       case 'a':
@@ -408,16 +453,33 @@ function setupKeyboardShortcuts() {
         // WASD debugging - only log if we're in limbo
         if (currentWorld === 'Limbo') {
           console.log('[Keyboard] WASD in Limbo:', e.key);
+          // Check if iframe is focused
+          const limboFrame = document.getElementById('limbo-frame');
+          const activeElement = document.activeElement;
+          console.log('[Keyboard] Active element:', activeElement?.tagName, activeElement?.id);
+          console.log('[Keyboard] Limbo frame focused:', document.activeElement === limboFrame);
+
+          // If not focused, show warning
+          if (document.activeElement !== limboFrame) {
+            console.warn('[Keyboard] Limbo frame NOT focused! Click in world to focus.');
+          }
         }
         break;
       case 'escape':
         console.log('[Keyboard] Escape - closing overlays');
         inventoryOverlay.classList.add('hidden');
         passportOverlay.classList.add('hidden');
-        document.getElementById('settings-overlay').classList.add('hidden');
+        helpOverlay.classList.add('hidden');
+        document.getElementById('settings-overlay')?.classList.add('hidden');
         break;
     }
   });
+}
+
+// Toggle help overlay
+function toggleHelp() {
+  helpOverlay.classList.toggle('hidden');
+  console.log('[Help] Toggled:', !helpOverlay.classList.contains('hidden'));
 }
 
 // Toggle inventory overlay
