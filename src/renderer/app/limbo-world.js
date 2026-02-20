@@ -92,8 +92,8 @@ class LimboWorldRenderer {
     this.portal.position.set(0, 2, -10);
     this.scene.add(this.portal);
 
-    // Portal label
-    this.createLabel('The Rift →', 0, 4, -10);
+    // Portal label (above portal)
+    this.createLabel('The Rift →', 0, 5.5, -10);
 
     // Floating crystals
     this.createCrystals();
@@ -242,29 +242,6 @@ class LimboWorldRenderer {
       }
     });
 
-    // Click to travel
-    canvas.addEventListener('click', (e) => {
-      if (this.isDragging) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-      );
-
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-
-      // Check portal intersection
-      const intersects = raycaster.intersectObject(this.portal, true);
-      if (intersects.length > 0) {
-        console.log('[Limbo] Portal clicked!');
-        if (this.onTravel) {
-          this.onTravel('the-rift', 'https://rift.riftclaw.com');
-        }
-      }
-    });
-
     console.log('[LimboWorld] Controls setup');
   }
 
@@ -298,6 +275,9 @@ class LimboWorldRenderer {
       frame.rotation.z += 0.01;
       center.material.opacity = 0.3 + Math.sin(time * 2) * 0.1;
       particles.rotation.y += 0.005;
+
+      // Check if player walked through portal
+      this.checkPortalCollision();
     }
 
     // Animate crystals
@@ -308,6 +288,26 @@ class LimboWorldRenderer {
     });
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  checkPortalCollision() {
+    if (!this.portal || this.portalTriggered) return;
+
+    // Get distance from camera to portal
+    const portalPos = this.portal.position;
+    const playerPos = this.camera.position;
+    const distance = playerPos.distanceTo(portalPos);
+
+    // Portal radius for entry detection
+    const portalRadius = 2.5;
+
+    if (distance < portalRadius) {
+      console.log('[Limbo] Player entered portal!');
+      this.portalTriggered = true;
+      if (this.onTravel) {
+        this.onTravel('the-rift', 'https://rift.riftclaw.com');
+      }
+    }
   }
 
   onResize() {

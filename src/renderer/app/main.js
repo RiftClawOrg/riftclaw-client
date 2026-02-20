@@ -260,50 +260,16 @@ function renderRiftWorld(scene) {
   // Create new renderer
   const container = document.getElementById('external-container');
   riftRenderer = new RiftWorldRenderer(container, scene);
-  riftRenderer.init();
-
-  // Setup click handling for portals
-  setupRiftClickHandler(riftRenderer);
-
-  console.log('[Renderer] The Rift rendered');
-}
-
-// Setup click handler for Rift portals
-function setupRiftClickHandler(renderer) {
-  const container = document.getElementById('external-container');
-  const canvas = container.querySelector('canvas');
-
-  if (!canvas) return;
-
-  canvas.addEventListener('click', (e) => {
-    console.log('[Rift] Click detected at:', e.clientX, e.clientY);
-
-    // Calculate mouse position
-    const rect = canvas.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1
-    );
-
-    // Raycast to find clicked portal
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, renderer.camera);
-
-    const portals = renderer.getPortals();
-    for (const portal of portals) {
-      const intersects = raycaster.intersectObject(portal, true);
-      if (intersects.length > 0) {
-        console.log('[Rift] Portal clicked:', portal.userData.name, portal.userData.url);
-
-        if (portal.userData.url === 'local' || portal.userData.name === 'Limbo') {
-          returnToLimbo();
-        } else {
-          travelToWorld(portal.userData.name, portal.userData.url);
-        }
-        break;
-      }
+  riftRenderer.setOnPortalEnter((name, url) => {
+    if (name === 'Limbo' || url === 'local') {
+      returnToLimbo();
+    } else {
+      travelToWorld(name, url);
     }
   });
+  riftRenderer.init();
+
+  console.log('[Renderer] The Rift rendered');
 }
 
 // Travel to a world

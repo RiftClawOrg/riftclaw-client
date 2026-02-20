@@ -193,8 +193,8 @@ class RiftWorldRenderer {
 
     this.scene.add(portalGroup);
 
-    // Label
-    this.createLabel(portalData.name, x, 4, z);
+    // Label (above portal)
+    this.createLabel(portalData.name, x, 5.5, z);
   }
 
   createLabel(text, x, y, z) {
@@ -268,6 +268,11 @@ class RiftWorldRenderer {
       direction.normalize();
 
       this.camera.position.add(direction.multiplyScalar(speed));
+
+      // Check for portal collisions after movement
+      if (!this.portalTriggered) {
+        this.checkPortalCollisions();
+      }
     }
 
     // Animate portals
@@ -286,6 +291,32 @@ class RiftWorldRenderer {
     }
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  checkPortalCollisions() {
+    if (this.portalTriggered) return;
+
+    const playerPos = this.camera.position;
+    const portalRadius = 2.5;
+
+    for (const portal of this.portals) {
+      const portalPos = portal.position;
+      const distance = playerPos.distanceTo(portalPos);
+
+      if (distance < portalRadius) {
+        console.log('[Rift] Player entered portal:', portal.userData.name);
+        this.portalTriggered = true;
+
+        if (this.onPortalEnter) {
+          this.onPortalEnter(portal.userData.name, portal.userData.url);
+        }
+        break;
+      }
+    }
+  }
+
+  setOnPortalEnter(callback) {
+    this.onPortalEnter = callback;
   }
 
   onResize() {

@@ -53,7 +53,7 @@ npm run build
 |-----|--------|
 | `WASD` | Move around (in 3D worlds) |
 | `Mouse` | Look around (click-drag) |
-| `Click` | Interact / Travel through portal |
+| `Walk` | Walk through portal to travel |
 | `I` | Toggle inventory |
 | `P` | Toggle passport |
 | `H` | Help menu |
