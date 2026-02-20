@@ -150,6 +150,12 @@ class RiftWorldRenderer {
 
     // Floating crystals (decoration)
     this.createCrystals();
+
+    // Ambient starfield
+    this.createStarfield();
+
+    // Portal glow effects
+    this.createPortalGlows();
   }
 
   createPortal(portalData, index, total) {
@@ -248,6 +254,91 @@ class RiftWorldRenderer {
     }
   }
 
+  createStarfield() {
+    const starCount = 1000;
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 3);
+    const colors = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount; i++) {
+      const radius = 50 + Math.random() * 100;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = radius * Math.cos(phi);
+
+      const colorChoice = Math.random();
+      if (colorChoice < 0.7) {
+        colors[i * 3] = 1;
+        colors[i * 3 + 1] = 1;
+        colors[i * 3 + 2] = 1;
+      } else if (colorChoice < 0.85) {
+        colors[i * 3] = 0;
+        colors[i * 3 + 1] = 0.8;
+        colors[i * 3 + 2] = 1;
+      } else {
+        colors[i * 3] = 0.5;
+        colors[i * 3 + 1] = 0.7;
+        colors[i * 3 + 2] = 1;
+      }
+    }
+
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const starMaterial = new THREE.PointsMaterial({
+      size: 0.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    this.stars = new THREE.Points(starGeometry, starMaterial);
+    this.scene.add(this.stars);
+  }
+
+  createPortalGlows() {
+    this.portalGlows = [];
+    this.portalLights = [];
+
+    this.portals.forEach((portal) => {
+      // Point light at portal
+      const light = new THREE.PointLight(0x00d5ff, 2, 20);
+      light.position.copy(portal.position);
+      this.scene.add(light);
+      this.portalLights.push(light);
+
+      // Glow sprite
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const context = canvas.getContext('2d');
+
+      const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+      gradient.addColorStop(0, 'rgba(0, 213, 255, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(0, 213, 255, 0.3)');
+      gradient.addColorStop(1, 'rgba(0, 213, 255, 0)');
+
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 128, 128);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        blending: THREE.AdditiveBlending
+      });
+
+      const glow = new THREE.Sprite(spriteMaterial);
+      glow.position.copy(portal.position);
+      glow.scale.set(8, 8, 1);
+      this.scene.add(glow);
+      this.portalGlows.push(glow);
+    });
+  }
+
   animate() {
     requestAnimationFrame(() => this.animate());
 
@@ -275,11 +366,27 @@ class RiftWorldRenderer {
       }
     }
 
+    // Animate stars
+    if (this.stars) {
+      this.stars.rotation.y += 0.0002;
+      this.stars.rotation.x += 0.0001;
+    }
+
     // Animate portals
     this.portals.forEach((portal, i) => {
       portal.children[0].rotation.z += 0.01; // Frame rotation
       portal.children[1].material.opacity = 0.3 + Math.sin(time * 2 + i) * 0.1;
     });
+
+    // Pulse portal glows
+    if (this.portalGlows && this.portalLights) {
+      this.portalGlows.forEach((glow, i) => {
+        const pulse = 0.5 + Math.sin(time * 3 + i) * 0.5;
+        this.portalLights[i].intensity = 1 + pulse;
+        glow.material.opacity = 0.3 + pulse * 0.3;
+        glow.scale.setScalar(6 + pulse * 2);
+      });
+    }
 
     // Animate crystals
     if (this.crystals) {

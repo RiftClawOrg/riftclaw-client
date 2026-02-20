@@ -97,6 +97,12 @@ class LimboWorldRenderer {
 
     // Floating crystals
     this.createCrystals();
+
+    // Ambient starfield
+    this.createStarfield();
+
+    // Portal glow effect
+    this.createPortalGlow();
   }
 
   createPortal() {
@@ -201,6 +207,93 @@ class LimboWorldRenderer {
     }
   }
 
+  createStarfield() {
+    const starCount = 1000;
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(starCount * 3);
+    const colors = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount; i++) {
+      // Random position in sphere around scene
+      const radius = 50 + Math.random() * 100;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = radius * Math.cos(phi);
+
+      // Star colors (white, cyan, light blue)
+      const colorChoice = Math.random();
+      if (colorChoice < 0.7) {
+        // White
+        colors[i * 3] = 1;
+        colors[i * 3 + 1] = 1;
+        colors[i * 3 + 2] = 1;
+      } else if (colorChoice < 0.85) {
+        // Cyan
+        colors[i * 3] = 0;
+        colors[i * 3 + 1] = 0.8;
+        colors[i * 3 + 2] = 1;
+      } else {
+        // Light blue
+        colors[i * 3] = 0.5;
+        colors[i * 3 + 1] = 0.7;
+        colors[i * 3 + 2] = 1;
+      }
+    }
+
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const starMaterial = new THREE.PointsMaterial({
+      size: 0.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    this.stars = new THREE.Points(starGeometry, starMaterial);
+    this.scene.add(this.stars);
+  }
+
+  createPortalGlow() {
+    // Create a point light at portal position
+    this.portalLight = new THREE.PointLight(0x00d5ff, 2, 20);
+    this.portalLight.position.copy(this.portal.position);
+    this.scene.add(this.portalLight);
+
+    // Create glow sprite
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const context = canvas.getContext('2d');
+
+    // Draw radial gradient glow
+    const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gradient.addColorStop(0, 'rgba(0, 213, 255, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(0, 213, 255, 0.3)');
+    gradient.addColorStop(1, 'rgba(0, 213, 255, 0)');
+
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 128, 128);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      blending: THREE.AdditiveBlending
+    });
+
+    this.portalGlow = new THREE.Sprite(spriteMaterial);
+    this.portalGlow.position.copy(this.portal.position);
+    this.portalGlow.scale.set(8, 8, 1);
+    this.scene.add(this.portalGlow);
+
+    // Store initial intensity for pulsing
+    this.portalGlowIntensity = 2;
+  }
+
   setupControls(canvas) {
     // Keys that Limbo handles (WASD)
     const limboKeys = ['w', 'a', 's', 'd'];
@@ -269,12 +362,26 @@ class LimboWorldRenderer {
     this.camera.rotation.y = this.yaw;
     this.camera.rotation.x = this.pitch;
 
+    // Animate stars (slow rotation)
+    if (this.stars) {
+      this.stars.rotation.y += 0.0002;
+      this.stars.rotation.x += 0.0001;
+    }
+
     // Animate portal
     if (this.portal) {
       const { frame, center, particles } = this.portal.userData;
       frame.rotation.z += 0.01;
       center.material.opacity = 0.3 + Math.sin(time * 2) * 0.1;
       particles.rotation.y += 0.005;
+
+      // Pulse portal glow
+      if (this.portalGlow && this.portalLight) {
+        const pulse = 0.5 + Math.sin(time * 3) * 0.5;
+        this.portalLight.intensity = 1 + pulse;
+        this.portalGlow.material.opacity = 0.3 + pulse * 0.3;
+        this.portalGlow.scale.setScalar(6 + pulse * 2);
+      }
 
       // Check if player walked through portal
       this.checkPortalCollision();
