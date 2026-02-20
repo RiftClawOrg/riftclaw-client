@@ -381,13 +381,3 @@ class RiftWorldRenderer {
 if (typeof module !== 'undefined') {
   module.exports = RiftWorldRenderer;
 }
-
-// Keyboard forwarding for The Rift
-// Keys that The Rift handles (WASD + mouse)
-const riftKeys = ['w', 'a', 's', 'd'];
-
-document.addEventListener('keydown', (e) => {
-// Export for use
-if (typeof module !== 'undefined') {
-  module.exports = RiftWorldRenderer;
-}

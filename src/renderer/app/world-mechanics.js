@@ -73,8 +73,8 @@ class WorldMechanics {
         const deltaY = e.clientY - this.previousMousePosition.y;
 
         this.yaw -= deltaX * 0.005;
-        this.pitch -= deltaY * 0.005;
-        this.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 3, this.pitch));
+        this.pitch -= deltaY * 0.01;
+        this.pitch = Math.max(-2, Math.min(2, this.pitch)); // Limit vertical look range
 
         this.previousMousePosition = { x: e.clientX, y: e.clientY };
       }
@@ -137,12 +137,12 @@ class WorldMechanics {
     // Calculate desired camera position (3rd person)
     const offset = this.cameraOffset.clone();
 
-    // Rotate offset by yaw
+    // Rotate offset by yaw (horizontal rotation)
     offset.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
 
-    // Add pitch rotation (looking up/down)
-    const pitchOffset = new THREE.Vector3(0, Math.sin(this.pitch) * 3, -Math.cos(this.pitch) * 2);
-    offset.add(pitchOffset);
+    // Apply pitch (vertical angle) - simpler approach
+    // Just move camera up/down based on pitch
+    offset.y += this.pitch * 2;
 
     const targetPosition = this.playerPosition.clone().add(offset);
 

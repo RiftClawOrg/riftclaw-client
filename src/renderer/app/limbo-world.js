@@ -157,8 +157,14 @@ class LimboWorldRenderer {
     const particles = new THREE.Points(particleGeometry, particleMaterial);
     portalGroup.add(particles);
 
-    // Store references for animation
-    portalGroup.userData = { frame, center, particles };
+    // Store references for animation and portal data
+    portalGroup.userData = {
+      frame,
+      center,
+      particles,
+      name: 'The Rift',
+      url: 'https://rift.riftclaw.com'
+    };
 
     return portalGroup;
   }
