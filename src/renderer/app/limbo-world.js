@@ -71,6 +71,7 @@ class LimboWorldRenderer {
       emissiveIntensity: 0.5
     });
     this.playerMesh = new THREE.Mesh(geometry, material);
+    this.playerMesh.position.y = 0.9; // Offset so bottom touches ground
     this.scene.add(this.playerMesh);
   }
 
@@ -95,7 +96,7 @@ class LimboWorldRenderer {
     this.portal.position.set(0, 2, -10);
     this.scene.add(this.portal);
 
-    // Portal label (above portal)
+    // Portal label (above portal) - display name for users
     this.createLabel('The Rift →', 0, 5.5, -10);
 
     // Floating crystals
@@ -158,11 +159,12 @@ class LimboWorldRenderer {
     portalGroup.add(particles);
 
     // Store references for animation and portal data
+    // Use lowercase 'the-rift' to match server registration
     portalGroup.userData = {
       frame,
       center,
       particles,
-      name: 'The Rift',
+      name: 'the-rift',
       url: 'https://rift.riftclaw.com'
     };
 
@@ -313,10 +315,10 @@ class LimboWorldRenderer {
     if (this.mechanics) {
       this.mechanics.update(delta);
 
-      // Update player visual position
+      // Update player visual position (offset so bottom touches ground)
       if (this.playerMesh) {
         const pos = this.mechanics.getPlayerPosition();
-        this.playerMesh.position.copy(pos);
+        this.playerMesh.position.set(pos.x, pos.y - 0.9, pos.z);
       }
 
       // Check portal collisions

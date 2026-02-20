@@ -78,6 +78,7 @@ class RiftWorldRenderer {
       emissiveIntensity: 0.5
     });
     this.playerMesh = new THREE.Mesh(geometry, material);
+    this.playerMesh.position.y = 0.9; // Offset so bottom touches ground
     this.scene.add(this.playerMesh);
   }
 
@@ -310,10 +311,10 @@ class RiftWorldRenderer {
     if (this.mechanics) {
       this.mechanics.update(delta);
 
-      // Update player visual position
+      // Update player visual position (offset so bottom touches ground)
       if (this.playerMesh) {
         const pos = this.mechanics.getPlayerPosition();
-        this.playerMesh.position.copy(pos);
+        this.playerMesh.position.set(pos.x, pos.y - 0.9, pos.z);
       }
 
       // Check portal collisions

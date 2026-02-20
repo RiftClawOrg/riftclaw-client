@@ -73,7 +73,7 @@ class WorldMechanics {
         const deltaY = e.clientY - this.previousMousePosition.y;
 
         this.yaw -= deltaX * 0.005;
-        this.pitch -= deltaY * 0.01;
+        this.pitch += deltaY * 0.01; // Inverted: + instead of -
         this.pitch = Math.max(-2, Math.min(2, this.pitch)); // Limit vertical look range
 
         this.previousMousePosition = { x: e.clientX, y: e.clientY };
