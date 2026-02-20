@@ -116,11 +116,11 @@ src/
 
 The client handles three types of worlds differently:
 
-### 1. Limbo (Local iframe)
-- **Why iframe?** Limbo is a separate HTML file (`worlds/limbo/index.html`) that runs independently
-- Isolated browsing context (security sandbox)
-- Forwards non-WASD keys to parent via postMessage
-- Local file, loaded via `file://` protocol
+### 1. Limbo (Local renderer)
+- Client renders Limbo locally using JavaScript (`LimboWorldRenderer` class)
+- Creates Three.js scene directly in main renderer process
+- No iframe needed - direct canvas in main app
+- Full WASD and mouse controls
 
 ### 2. The Rift (Local renderer)
 - **Why not iframe?** The Rift server is a headless API (no visual HTML page)

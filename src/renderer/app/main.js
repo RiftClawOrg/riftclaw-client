@@ -50,14 +50,8 @@ async function init() {
   // Generate inventory slots
   generateInventorySlots();
 
-  // Focus the limbo iframe so WASD works
-  setTimeout(() => {
-    const limboFrame = document.getElementById('limbo-frame');
-    if (limboFrame) {
-      limboFrame.focus();
-      console.log('[Renderer] Limbo frame focused');
-    }
-  }, 1000);
+  // Initialize Limbo (local renderer, no iframe)
+  initLimbo();
 
   hideLoading();
   showToast('Welcome to RiftWalker!', 'success');
@@ -227,8 +221,32 @@ function loadWorld(scene) {
   updateInventoryUI();
 }
 
-// Render The Rift world locally
+// World renderers
+let limboRenderer = null;
 let riftRenderer = null;
+
+// Initialize Limbo on load
+function initLimbo() {
+  console.log('[Renderer] Initializing Limbo...');
+
+  // Destroy previous if exists
+  if (limboRenderer) {
+    limboRenderer.destroy();
+    limboRenderer = null;
+  }
+
+  // Create Limbo renderer
+  const container = document.getElementById('limbo-container');
+  limboRenderer = new LimboWorldRenderer(container);
+  limboRenderer.setOnTravel((world, url) => {
+    travelToWorld(world, url);
+  });
+  limboRenderer.init();
+
+  console.log('[Renderer] Limbo initialized');
+}
+
+// Render The Rift world locally
 function renderRiftWorld(scene) {
   // Clear webview
   worldWebview.src = '';
@@ -328,19 +346,30 @@ async function travelToWorld(targetWorld, targetUrl) {
 
 // Return to Limbo
 function returnToLimbo() {
+  // Destroy The Rift renderer if active
+  if (riftRenderer) {
+    riftRenderer.destroy();
+    riftRenderer = null;
+  }
+
+  // Clear external container
+  worldWebview.src = '';
+
+  // Switch to Limbo
   externalContainer.classList.remove('active');
   limboContainer.classList.add('active');
-  
+
+  // Re-initialize Limbo
+  initLimbo();
+
   currentWorld = 'Limbo';
   currentWorldEl.textContent = currentWorld;
   worldTypeEl.textContent = 'Local';
   worldTypeEl.classList.remove('remote');
   worldTypeEl.classList.add('local');
-  
-  worldWebview.src = '';
-  
+
   window.rift.setCurrentWorld('limbo');
-  
+
   showToast('Returned to Limbo', 'success');
 }
 
@@ -384,11 +413,6 @@ function setupUIListeners() {
 
   // Home button
   document.getElementById('btn-home').addEventListener('click', goHome);
-
-  // Focus limbo frame when clicked (for WASD)
-  document.getElementById('limbo-frame').addEventListener('click', () => {
-    document.getElementById('limbo-frame').focus();
-  });
 
   // Help button
   document.getElementById('btn-help')?.addEventListener('click', toggleHelp);
@@ -708,18 +732,14 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Listen for messages from iframes
+// Listen for messages from external world iframes (if any)
 window.addEventListener('message', (e) => {
-  console.log('[Main] Message from iframe:', e.data);
+  console.log('[Main] Message from child:', e.data);
 
   if (e.data.type === 'travel') {
     travelToWorld(e.data.world, e.data.url);
   } else if (e.data.type === 'chat') {
     sendChat();
-  } else if (e.data.type === 'keypress') {
-    // Forward key from iframe to our keyboard handler
-    console.log('[Main] Key forwarded from iframe:', e.data.key);
-    handleForwardedKey(e.data.key);
   }
 });
 
