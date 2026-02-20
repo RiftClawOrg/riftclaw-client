@@ -32,7 +32,7 @@
     </div>
     <div class="top-right">
       <button id="btn-inventory" class="btn-icon" title="Inventory (I)">🎒</button>
-      <button id="btn-passport" class="btn-icon" title="Passport (P)">🪪</button>
+      <button id="btn-passport" class="btn-icon" title="Passport (P)">ID</button>
       <button id="btn-home" class="btn-icon" title="Go to The Rift (G)">🏠</button>
       <button id="btn-help" class="btn-icon" title="Help (H)">❓</button>
       <button id="btn-settings" class="btn-icon" title="Settings (,)">⚙️</button>
@@ -78,7 +78,7 @@
   <div id="passport-overlay" class="passport-overlay hidden">
     <div class="passport-card">
       <div class="passport-header">
-        <h3>🪪 RiftWalker Passport</h3>
+        <h3>ID RiftWalker Passport</h3>
         <button id="btn-close-passport" class="btn-close">×</button>
       </div>
       <div class="passport-body">
@@ -115,10 +115,14 @@
       </div>
       <div class="help-body">
         <div class="help-section">
-          <h4>Movement</h4>
+          <h4>Movement (3rd Person)</h4>
           <div class="help-item">
             <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-            <span>Move around (click in world first)</span>
+            <span>Move around</span>
+          </div>
+          <div class="help-item">
+            <kbd>Space</kbd>
+            <span>Jump</span>
           </div>
           <div class="help-item">
             <kbd>Mouse</kbd>
@@ -245,6 +249,7 @@
 
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="app/world-mechanics.js"></script>
   <script src="app/limbo-world.js"></script>
   <script src="app/rift-world.js"></script>
   <script src="app/main.js"></script>

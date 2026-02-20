@@ -51,7 +51,8 @@ npm run build
 
 | Key | Action |
 |-----|--------|
-| `WASD` | Move around (in 3D worlds) |
+| `WASD` | Move around (3rd person) |
+| `Space` | Jump |
 | `Mouse` | Look around (click-drag) |
 | `Walk` | Walk through portal to travel |
 | `I` | Toggle inventory |
@@ -118,16 +119,36 @@ The client handles three types of worlds differently:
 
 ### 1. Limbo (Local renderer)
 - Client renders Limbo locally using JavaScript (`LimboWorldRenderer` class)
+- Uses shared `WorldMechanics` for consistent controls
 - Creates Three.js scene directly in main renderer process
 - No iframe needed - direct canvas in main app
-- Full WASD and mouse controls
+- 3rd person camera + jumping
 
 ### 2. The Rift (Local renderer)
 - **Why not iframe?** The Rift server is a headless API (no visual HTML page)
 - Client renders The Rift locally using JavaScript (`RiftWorldRenderer` class)
+- Uses shared `WorldMechanics` for consistent controls
 - Creates Three.js scene directly in main renderer process
 - Receives scene JSON from server, builds world dynamically
-- Full control over rendering and controls
+- 3rd person camera + jumping
+
+### Shared World Mechanics (`world-mechanics.js`)
+
+All worlds use the same mechanics system for consistency:
+
+**Movement:**
+- WASD movement with smooth acceleration/deceleration
+- 3rd person camera following player
+- Mouse drag to rotate camera around player
+
+**Physics:**
+- Gravity system
+- Jumping (Space key)
+- Ground collision detection
+
+**Portal Detection:**
+- Automatic portal entry when walking within 2.5 units
+- Consistent across all worlds
 
 ### 3. External Worlds (Webview/iframe)
 - Arena, Forest, Minecraft, etc.

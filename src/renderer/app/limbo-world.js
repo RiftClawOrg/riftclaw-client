@@ -13,12 +13,9 @@ class LimboWorldRenderer {
     this.renderer = null;
     this.portal = null;
     this.crystals = [];
-    this.controls = { keys: {} };
-    this.isDragging = false;
-    this.previousMousePosition = { x: 0, y: 0 };
-    this.yaw = 0;
-    this.pitch = 0;
-    this.onTravel = null; // Callback when portal clicked
+    this.mechanics = null;
+    this.onTravel = null;
+    this.playerMesh = null; // Visual representation of player
   }
 
   init() {
@@ -39,25 +36,22 @@ class LimboWorldRenderer {
     this.scene.fog = new THREE.FogExp2(0x050510, 0.02);
 
     this.camera = new THREE.PerspectiveCamera(75, this.container.clientWidth / this.container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 1.6, 5);
 
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0x404060, 0.5);
-    this.scene.add(ambientLight);
-
-    const dirLight = new THREE.DirectionalLight(0x00d5ff, 0.5);
-    dirLight.position.set(5, 10, 5);
-    this.scene.add(dirLight);
-
     // Build world
     this.buildWorld();
 
-    // Setup controls
-    this.setupControls(canvas);
+    // Setup shared mechanics (3rd person + jumping)
+    this.mechanics = new WorldMechanics(this.camera, canvas);
+    this.mechanics.setOnPortalEnter((name, url) => {
+      if (this.onTravel) this.onTravel(name, url);
+    });
+
+    // Create player visual
+    this.createPlayerVisual();
 
     // Focus canvas
     canvas.focus();
@@ -68,7 +62,19 @@ class LimboWorldRenderer {
     // Handle resize
     window.addEventListener('resize', () => this.onResize());
 
-    console.log('[LimboWorld] Initialized');
+    console.log('[LimboWorld] Initialized with shared mechanics');
+  }
+
+  createPlayerVisual() {
+    // Simple player representation (glowing cube)
+    const geometry = new THREE.BoxGeometry(0.5, 1.8, 0.5);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x00d5ff,
+      emissive: 0x00d5ff,
+      emissiveIntensity: 0.5
+    });
+    this.playerMesh = new THREE.Mesh(geometry, material);
+    this.scene.add(this.playerMesh);
   }
 
   buildWorld() {
@@ -335,32 +341,27 @@ class LimboWorldRenderer {
       }
     });
 
-    console.log('[LimboWorld] Controls setup');
-  }
-
   animate() {
     requestAnimationFrame(() => this.animate());
 
     const time = Date.now() * 0.001;
     const delta = 0.016;
 
-    // Handle movement
-    const speed = 5 * delta;
-    const direction = new THREE.Vector3();
+    // Update shared mechanics (movement, jumping, 3rd person camera)
+    if (this.mechanics) {
+      this.mechanics.update(delta);
 
-    if (this.controls.keys['w']) direction.z -= 1;
-    if (this.controls.keys['s']) direction.z += 1;
-    if (this.controls.keys['a']) direction.x -= 1;
-    if (this.controls.keys['d']) direction.x += 1;
+      // Update player visual position
+      if (this.playerMesh) {
+        const pos = this.mechanics.getPlayerPosition();
+        this.playerMesh.position.copy(pos);
+      }
 
-    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.yaw);
-    direction.normalize();
-    this.camera.position.add(direction.multiplyScalar(speed));
-
-    // Camera rotation
-    this.camera.rotation.order = 'YXZ';
-    this.camera.rotation.y = this.yaw;
-    this.camera.rotation.x = this.pitch;
+      // Check portal collisions
+      if (this.portal) {
+        this.mechanics.checkPortalCollisions([this.portal]);
+      }
+    }
 
     // Animate stars (slow rotation)
     if (this.stars) {
@@ -382,9 +383,6 @@ class LimboWorldRenderer {
         this.portalGlow.material.opacity = 0.3 + pulse * 0.3;
         this.portalGlow.scale.setScalar(6 + pulse * 2);
       }
-
-      // Check if player walked through portal
-      this.checkPortalCollision();
     }
 
     // Animate crystals
@@ -395,26 +393,6 @@ class LimboWorldRenderer {
     });
 
     this.renderer.render(this.scene, this.camera);
-  }
-
-  checkPortalCollision() {
-    if (!this.portal || this.portalTriggered) return;
-
-    // Get distance from camera to portal
-    const portalPos = this.portal.position;
-    const playerPos = this.camera.position;
-    const distance = playerPos.distanceTo(portalPos);
-
-    // Portal radius for entry detection
-    const portalRadius = 2.5;
-
-    if (distance < portalRadius) {
-      console.log('[Limbo] Player entered portal!');
-      this.portalTriggered = true;
-      if (this.onTravel) {
-        this.onTravel('the-rift', 'https://rift.riftclaw.com');
-      }
-    }
   }
 
   onResize() {
