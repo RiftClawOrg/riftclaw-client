@@ -174,6 +174,10 @@ ipcMain.handle('send-to-relay', (event, message) => {
   return { success: false, error: 'Not connected to relay' };
 });
 
+ipcMain.handle('is-relay-connected', () => {
+  return relayClient && relayClient.readyState === WebSocket.OPEN;
+});
+
 ipcMain.handle('get-current-world', () => {
   return currentWorld;
 });

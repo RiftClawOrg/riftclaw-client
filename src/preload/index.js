@@ -18,7 +18,8 @@ contextBridge.exposeInMainWorld('rift', {
   
   // Relay
   sendToRelay: (message) => ipcRenderer.invoke('send-to-relay', message),
-  
+  isRelayConnected: () => ipcRenderer.invoke('is-relay-connected'),
+
   // Relay event listeners
   onRelayConnected: (callback) => ipcRenderer.on('relay-connected', callback),
   onRelayDisconnected: (callback) => ipcRenderer.on('relay-disconnected', callback),

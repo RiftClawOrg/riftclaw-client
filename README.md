@@ -51,11 +51,12 @@ npm run build
 
 | Key | Action |
 |-----|--------|
-| `WASD` | Move (in Limbo) |
-| `Mouse` | Look around |
+| `WASD` | Move (in Limbo - click in world first) |
+| `Mouse` | Look around (click-drag) |
 | `Click` | Interact / Travel through portal |
 | `I` | Toggle inventory |
 | `P` | Toggle passport |
+| `S` | Toggle settings |
 | `H` | Go to The Rift (home) |
 | `O` | Return to Limbo |
 | `Enter` | Focus chat |

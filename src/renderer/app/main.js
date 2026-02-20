@@ -29,28 +29,37 @@ const chatInput = document.getElementById('chat-input');
 
 // Initialize
 async function init() {
-  console.log('[Renderer] RiftClaw Traveler initializing...');
-  
+  console.log('[Renderer] RiftWalker initializing...');
+
   showLoading('Connecting to relay...', 'Establishing secure connection');
-  
+
   // Load passport
   passport = await window.rift.getPassport();
   console.log('[Renderer] Passport loaded:', passport.agent_id);
-  
+
   // Load inventory
   inventory = await window.rift.getInventory();
   updateInventoryUI();
-  
+
   // Setup event listeners
   setupRelayListeners();
   setupUIListeners();
   setupKeyboardShortcuts();
-  
+
   // Generate inventory slots
   generateInventorySlots();
-  
+
+  // Focus the limbo iframe so WASD works
+  setTimeout(() => {
+    const limboFrame = document.getElementById('limbo-frame');
+    if (limboFrame) {
+      limboFrame.focus();
+      console.log('[Renderer] Limbo frame focused');
+    }
+  }, 1000);
+
   hideLoading();
-  showToast('Welcome to RiftClaw!', 'success');
+  showToast('Welcome to RiftWalker!', 'success');
 }
 
 // Setup relay event listeners
@@ -180,8 +189,12 @@ function loadWorld(scene) {
 
 // Travel to a world
 async function travelToWorld(targetWorld, targetUrl) {
-  if (!isConnected) {
-    showToast('Not connected to relay', 'error');
+  // Check connection directly with main process
+  const connected = await window.rift.isRelayConnected();
+
+  if (!connected) {
+    console.error('[Travel] Not connected to relay');
+    showToast('Not connected to relay - please wait...', 'error');
     return;
   }
   
@@ -251,25 +264,30 @@ function setupUIListeners() {
   // Inventory button
   document.getElementById('btn-inventory').addEventListener('click', toggleInventory);
   document.getElementById('btn-close-inventory').addEventListener('click', toggleInventory);
-  
+
   // Passport button
   document.getElementById('btn-passport').addEventListener('click', togglePassport);
   document.getElementById('btn-close-passport').addEventListener('click', togglePassport);
-  
+
   // Settings button
   document.getElementById('btn-settings').addEventListener('click', toggleSettings);
   document.getElementById('btn-close-settings').addEventListener('click', toggleSettings);
   document.getElementById('btn-save-settings').addEventListener('click', saveSettings);
   document.getElementById('btn-reset-settings').addEventListener('click', resetSettings);
   document.getElementById('btn-add-bookmark').addEventListener('click', addBookmark);
-  
+
   // Volume slider
   document.getElementById('setting-volume').addEventListener('input', (e) => {
     document.getElementById('volume-value').textContent = e.target.value + '%';
   });
-  
+
   // Home button
   document.getElementById('btn-home').addEventListener('click', goHome);
+
+  // Focus limbo frame when clicked (for WASD)
+  document.getElementById('limbo-frame').addEventListener('click', () => {
+    document.getElementById('limbo-frame').focus();
+  });
   
   // Chat
   document.getElementById('btn-send-chat').addEventListener('click', sendChat);
