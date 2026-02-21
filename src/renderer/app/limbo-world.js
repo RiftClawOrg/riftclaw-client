@@ -18,7 +18,7 @@ class LimboWorldRenderer {
     this.playerMesh = null; // Visual representation of player
   }
 
-  init() {
+  async init() {
     // Clear container
     this.container.innerHTML = '';
 
@@ -44,8 +44,8 @@ class LimboWorldRenderer {
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Build world
-    this.buildWorld();
+    // Load and build world from scene JSON
+    await this.loadScene();
 
     // Setup shared mechanics (3rd person + jumping)
     this.mechanics = new WorldMechanics(this.camera, canvas);
@@ -104,7 +104,252 @@ class LimboWorldRenderer {
     this.scene.add(this.playerMesh);
   }
 
-  buildWorld() {
+  async loadScene() {
+    try {
+      // Load limbo.json scene file
+      const response = await fetch('scenes/limbo.json');
+      if (!response.ok) {
+        throw new Error(`Failed to load scene: ${response.status} ${response.statusText}`);
+      }
+      const sceneData = await response.json();
+      console.log('[LimboWorld] Loaded scene:', sceneData.name);
+      
+      // Build world from scene data
+      this.buildWorldFromData(sceneData);
+      
+      // Store scene data for editor
+      this.sceneData = sceneData;
+    } catch (error) {
+      console.error('[LimboWorld] Failed to load scene, using fallback:', error);
+      // Fallback to hardcoded world if JSON fails
+      this.buildWorldFallback();
+    }
+  }
+
+  buildWorldFromData(data) {
+    // Apply settings
+    if (data.settings) {
+      if (data.settings.backgroundColor) {
+        this.scene.background = new THREE.Color(data.settings.backgroundColor);
+      }
+      if (data.settings.fog) {
+        this.scene.fog = new THREE.FogExp2(
+          data.settings.fog.color,
+          data.settings.fog.density
+        );
+      }
+    }
+
+    // Build objects from data
+    if (data.objects) {
+      data.objects.forEach(obj => {
+        this.createObjectFromData(obj);
+      });
+    }
+
+    // Build portals
+    if (data.portals) {
+      data.portals.forEach(portalData => {
+        this.createPortalFromData(portalData);
+      });
+    }
+
+    // Build crystals
+    if (data.crystals) {
+      this.createCrystalsFromData(data.crystals);
+    }
+
+    // Build particles/starfield
+    if (data.particles?.starfield) {
+      this.createStarfieldFromData(data.particles.starfield);
+    }
+
+    // Create labels
+    if (data.labels) {
+      data.labels.forEach(label => {
+        this.createLabel(label.text, label.position.x, label.position.y, label.position.z);
+      });
+    }
+  }
+
+  createObjectFromData(obj) {
+    let mesh;
+
+    switch (obj.type) {
+      case 'floor':
+        const floorGeo = new THREE.PlaneGeometry(
+          obj.geometry.width,
+          obj.geometry.height
+        );
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: obj.material.color,
+          roughness: obj.material.roughness,
+          metalness: obj.material.metalness
+        });
+        this.floor = new THREE.Mesh(floorGeo, floorMat);
+        this.floor.rotation.x = -Math.PI / 2;
+        this.floor.userData = { type: 'floor', name: obj.name };
+        this.scene.add(this.floor);
+        break;
+
+      case 'grid':
+        this.gridHelper = new THREE.GridHelper(
+          obj.geometry.size,
+          obj.geometry.divisions,
+          obj.material.colorCenter,
+          obj.material.colorGrid
+        );
+        this.gridHelper.userData = { type: 'grid', name: obj.name };
+        this.scene.add(this.gridHelper);
+        break;
+
+      case 'player':
+        // Player is handled by createPlayerVisual
+        break;
+    }
+  }
+
+  createPortalFromData(data) {
+    const portalGroup = new THREE.Group();
+    
+    const props = data.properties || {};
+    const frameRadius = props.frameRadius || 2;
+    const frameTube = props.frameTube || 0.2;
+    const frameColor = props.frameColor || '#00d5ff';
+    const centerColor = props.centerColor || '#00ffff';
+
+    // Portal frame
+    const frameGeometry = new THREE.TorusGeometry(frameRadius, frameTube, 16, 100);
+    const frameMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(frameColor),
+      emissive: new THREE.Color(frameColor),
+      emissiveIntensity: 0.5
+    });
+    const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+    portalGroup.add(frame);
+
+    // Portal center
+    const centerGeometry = new THREE.CircleGeometry(frameRadius * 0.9, 32);
+    const centerMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(centerColor),
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide
+    });
+    const center = new THREE.Mesh(centerGeometry, centerMaterial);
+    portalGroup.add(center);
+
+    // Portal particles
+    const particleCount = props.particleCount || 50;
+    const particleGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const radius = frameRadius + Math.random() * 0.5;
+      positions[i * 3] = Math.cos(angle) * radius;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 4;
+      positions[i * 3 + 2] = Math.sin(angle) * radius;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+      color: new THREE.Color(props.particleColor || frameColor),
+      size: 0.05,
+      transparent: true,
+      opacity: 0.8
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    portalGroup.add(particles);
+
+    // Position and rotate portal
+    portalGroup.position.set(data.position.x, data.position.y, data.position.z);
+    portalGroup.rotation.y = (data.rotation?.y || 0) * Math.PI / 180;
+
+    // Store portal data
+    portalGroup.userData = {
+      frame,
+      center,
+      particles,
+      name: data.worldId || data.name.toLowerCase(),
+      displayName: data.displayName || data.name,
+      url: data.url
+    };
+
+    this.portal = portalGroup;
+    this.scene.add(portalGroup);
+  }
+
+  createCrystalsFromData(data) {
+    const geometry = new THREE.OctahedronGeometry(data.geometry.radius);
+    const material = new THREE.MeshStandardMaterial({
+      color: data.material.color,
+      emissive: data.material.emissive,
+      emissiveIntensity: data.material.emissiveIntensity
+    });
+
+    const area = data.spawnArea;
+    for (let i = 0; i < data.count; i++) {
+      const crystal = new THREE.Mesh(geometry, material);
+      crystal.position.set(
+        area.x.min + Math.random() * (area.x.max - area.x.min),
+        area.y.min + Math.random() * (area.y.max - area.y.min),
+        area.z.min + Math.random() * (area.z.max - area.z.min)
+      );
+      crystal.userData = {
+        type: 'crystal',
+        name: `Crystal ${i + 1}`,
+        speed: data.animation.speed.min + Math.random() * (data.animation.speed.max - data.animation.speed.min),
+        offset: Math.random() * Math.PI * 2
+      };
+      this.scene.add(crystal);
+      this.crystals.push(crystal);
+    }
+  }
+
+  createStarfieldFromData(data) {
+    const starGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(data.count * 3);
+    const colors = new Float32Array(data.count * 3);
+
+    for (let i = 0; i < data.count; i++) {
+      const radius = data.radius.min + Math.random() * (data.radius.max - data.radius.min);
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = radius * Math.cos(phi);
+
+      // Random color from palette
+      const colorHex = data.colors[Math.floor(Math.random() * data.colors.length)];
+      const color = new THREE.Color(colorHex);
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+    }
+
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const starMaterial = new THREE.PointsMaterial({
+      size: data.size,
+      vertexColors: true,
+      transparent: true,
+      opacity: data.opacity
+    });
+
+    this.stars = new THREE.Points(starGeometry, starMaterial);
+    this.stars.userData = { type: 'stars', name: 'Starfield' };
+    this.scene.add(this.stars);
+  }
+
+  buildWorldFallback() {
+    // Fallback world if JSON fails to load
+    console.log('[LimboWorld] Building fallback world');
+
     // Floor
     const floorGeometry = new THREE.PlaneGeometry(50, 50);
     const floorMaterial = new THREE.MeshStandardMaterial({
@@ -125,11 +370,9 @@ class LimboWorldRenderer {
     // Portal to The Rift
     this.portal = this.createPortal();
     this.portal.position.set(0, 2, -10);
-    // Note: createPortal sets userData.name = 'the-rift' (world ID)
-    // and userData.displayName = 'The Rift Portal' (for display)
     this.scene.add(this.portal);
 
-    // Portal label (above portal) - display name for users
+    // Portal label
     this.createLabel('The Rift Portal →', 0, 5.5, -10);
 
     // Floating crystals

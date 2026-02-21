@@ -299,7 +299,7 @@ let limboRenderer = null;
 let riftRenderer = null;
 
 // Initialize Limbo on load
-function initLimbo() {
+async function initLimbo() {
   console.log('[Renderer] Initializing Limbo...');
 
   // Destroy previous if exists
@@ -314,7 +314,7 @@ function initLimbo() {
   limboRenderer.setOnTravel((world, url) => {
     travelToWorld(world, url);
   });
-  limboRenderer.init();
+  await limboRenderer.init();
 
   // Update UI to show we're in Limbo
   currentWorld = 'Limbo';
@@ -340,11 +340,11 @@ function renderRiftWorld(scene) {
   // Create new renderer
   const container = document.getElementById('external-container');
   riftRenderer = new RiftWorldRenderer(container, scene);
-  riftRenderer.setOnPortalEnter((name, url) => {
+  riftRenderer.setOnPortalEnter(async (name, url) => {
     if (name === 'Limbo' || url === 'local') {
-      returnToLimbo();
+      await returnToLimbo();
     } else {
-      travelToWorld(name, url);
+      await travelToWorld(name, url);
     }
   });
   riftRenderer.init();
@@ -421,7 +421,7 @@ async function travelToWorld(targetWorld, targetUrl) {
 }
 
 // Return to Limbo
-function returnToLimbo() {
+async function returnToLimbo() {
   // Destroy The Rift renderer if active
   if (riftRenderer) {
     riftRenderer.destroy();
@@ -436,7 +436,7 @@ function returnToLimbo() {
   limboContainer.classList.add('active');
 
   // Re-initialize Limbo
-  initLimbo();
+  await initLimbo();
 
   currentWorld = 'Limbo';
   currentWorldEl.textContent = currentWorld;
