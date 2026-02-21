@@ -1,0 +1,140 @@
+{
+  "name": "Limbo",
+  "description": "The starting area for all travelers. A quiet void between worlds.",
+  "version": "1.0.0",
+  "metadata": {
+    "author": "RiftClaw",
+    "created": "2026-02-21",
+    "tags": ["hub", "starting-area", "void"]
+  },
+  "settings": {
+    "backgroundColor": "#050510",
+    "fog": {
+      "color": "#050510",
+      "density": 0.02
+    },
+    "ambientLight": {
+      "color": "#404060",
+      "intensity": 0.5
+    }
+  },
+  "spawnPoint": {
+    "position": { "x": 0, "y": 1.6, "z": 5 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  },
+  "objects": [
+    {
+      "id": "floor",
+      "type": "floor",
+      "name": "Floor",
+      "geometry": {
+        "type": "PlaneGeometry",
+        "width": 50,
+        "height": 50
+      },
+      "material": {
+        "type": "MeshStandardMaterial",
+        "color": "#0a0a15",
+        "roughness": 0.8,
+        "metalness": 0.2
+      },
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "rotation": { "x": -90, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    },
+    {
+      "id": "grid",
+      "type": "grid",
+      "name": "Grid",
+      "geometry": {
+        "type": "GridHelper",
+        "size": 50,
+        "divisions": 50
+      },
+      "material": {
+        "colorCenter": "#00d5ff",
+        "colorGrid": "#1a1a2a"
+      },
+      "position": { "x": 0, "y": 0.01, "z": 0 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    },
+    {
+      "id": "portal-the-rift",
+      "type": "portal",
+      "name": "The Rift Portal",
+      "worldId": "the-rift",
+      "worldUrl": "https://rift.riftclaw.com",
+      "position": { "x": 0, "y": 2, "z": -10 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 },
+      "properties": {
+        "frameRadius": 2,
+        "frameTube": 0.2,
+        "frameColor": "#00d5ff",
+        "centerColor": "#00ffff",
+        "particleCount": 50,
+        "particleColor": "#00d5ff"
+      }
+    },
+    {
+      "id": "player-avatar",
+      "type": "player",
+      "name": "Player Avatar",
+      "geometry": {
+        "type": "BoxGeometry",
+        "width": 0.5,
+        "height": 1.8,
+        "depth": 0.5
+      },
+      "material": {
+        "type": "MeshStandardMaterial",
+        "color": "#00d5ff",
+        "emissive": "#00d5ff",
+        "emissiveIntensity": 0.5
+      },
+      "position": { "x": 0, "y": 0.95, "z": 5 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    }
+  ],
+  "crystals": {
+    "count": 10,
+    "geometry": {
+      "type": "OctahedronGeometry",
+      "radius": 0.3
+    },
+    "material": {
+      "type": "MeshStandardMaterial",
+      "color": "#ff00ff",
+      "emissive": "#ff00ff",
+      "emissiveIntensity": 0.3
+    },
+    "spawnArea": {
+      "x": { "min": -10, "max": 10 },
+      "y": { "min": 1, "max": 4 },
+      "z": { "min": -15, "max": 5 }
+    },
+    "animation": {
+      "floating": true,
+      "speed": { "min": 0.5, "max": 1.0 }
+    }
+  },
+  "particles": {
+    "starfield": {
+      "count": 1000,
+      "radius": { "min": 50, "max": 150 },
+      "colors": ["#ffffff", "#00ccff", "#80b3ff"],
+      "size": 0.5,
+      "opacity": 0.8
+    }
+  },
+  "labels": [
+    {
+      "text": "The Rift Portal →",
+      "position": { "x": 0, "y": 5.5, "z": -10 },
+      "color": "#00d5ff",
+      "scale": { "x": 4, "y": 1, "z": 1 }
+    }
+  ]
+}

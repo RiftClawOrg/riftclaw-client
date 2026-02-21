@@ -1,0 +1,211 @@
+{
+  "name": "The Rift",
+  "description": "The central hub connecting all worlds. A nexus of infinite possibilities.",
+  "version": "1.0.0",
+  "metadata": {
+    "author": "RiftClaw",
+    "created": "2026-02-21",
+    "tags": ["hub", "nexus", "central"]
+  },
+  "settings": {
+    "backgroundColor": "#050510",
+    "fog": {
+      "color": "#050510",
+      "density": 0.02
+    },
+    "ambientLight": {
+      "color": "#404060",
+      "intensity": 0.5
+    },
+    "directionalLight": {
+      "color": "#00d5ff",
+      "intensity": 0.5,
+      "position": { "x": 5, "y": 10, "z": 5 }
+    }
+  },
+  "spawnPoint": {
+    "position": { "x": 0, "y": 1.6, "z": 0 },
+    "rotation": { "x": 0, "y": 0, "z": 0 }
+  },
+  "objects": [
+    {
+      "id": "floor",
+      "type": "floor",
+      "name": "Floor",
+      "geometry": {
+        "type": "PlaneGeometry",
+        "width": 100,
+        "height": 100
+      },
+      "material": {
+        "type": "MeshStandardMaterial",
+        "color": "#0a0a15",
+        "roughness": 0.8,
+        "metalness": 0.2
+      },
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "rotation": { "x": -90, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    },
+    {
+      "id": "grid",
+      "type": "grid",
+      "name": "Grid",
+      "geometry": {
+        "type": "GridHelper",
+        "size": 100,
+        "divisions": 100
+      },
+      "material": {
+        "colorCenter": "#00d5ff",
+        "colorGrid": "#1a1a2a"
+      },
+      "position": { "x": 0, "y": 0.01, "z": 0 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    },
+    {
+      "id": "player-avatar",
+      "type": "player",
+      "name": "Player Avatar",
+      "geometry": {
+        "type": "BoxGeometry",
+        "width": 0.5,
+        "height": 1.8,
+        "depth": 0.5
+      },
+      "material": {
+        "type": "MeshStandardMaterial",
+        "color": "#00d5ff",
+        "emissive": "#00d5ff",
+        "emissiveIntensity": 0.5
+      },
+      "position": { "x": 0, "y": 0.9, "z": 0 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "scale": { "x": 1, "y": 1, "z": 1 }
+    }
+  ],
+  "portals": [
+    {
+      "id": "portal-limbo",
+      "name": "Limbo",
+      "displayName": "Limbo",
+      "worldId": "limbo",
+      "url": "local",
+      "position": { "x": 0, "y": 2, "z": 10 },
+      "rotation": { "x": 0, "y": 180, "z": 0 },
+      "properties": {
+        "frameRadius": 2,
+        "frameTube": 0.2,
+        "frameColor": "#00d5ff",
+        "centerColor": "#00ffff",
+        "particleColor": "#00d5ff"
+      }
+    },
+    {
+      "id": "portal-arena",
+      "name": "Arena",
+      "displayName": "Arena",
+      "worldId": "arena",
+      "url": "https://arena.riftclaw.com",
+      "position": { "x": 10, "y": 2, "z": 0 },
+      "rotation": { "x": 0, "y": -90, "z": 0 },
+      "properties": {
+        "frameRadius": 2,
+        "frameTube": 0.2,
+        "frameColor": "#ff3333",
+        "centerColor": "#ff6666",
+        "particleColor": "#ff3333"
+      }
+    },
+    {
+      "id": "portal-forest",
+      "name": "Forest",
+      "displayName": "Forest",
+      "worldId": "forest",
+      "url": "https://forest.riftclaw.com",
+      "position": { "x": 0, "y": 2, "z": -10 },
+      "rotation": { "x": 0, "y": 0, "z": 0 },
+      "properties": {
+        "frameRadius": 2,
+        "frameTube": 0.2,
+        "frameColor": "#33ff33",
+        "centerColor": "#66ff66",
+        "particleColor": "#33ff33"
+      }
+    },
+    {
+      "id": "portal-cyber",
+      "name": "Cyb3r World",
+      "displayName": "Cyb3r World",
+      "worldId": "cyber",
+      "url": "https://cyber.riftclaw.com",
+      "position": { "x": -10, "y": 2, "z": 0 },
+      "rotation": { "x": 0, "y": 90, "z": 0 },
+      "properties": {
+        "frameRadius": 2,
+        "frameTube": 0.2,
+        "frameColor": "#ff00ff",
+        "centerColor": "#ff66ff",
+        "particleColor": "#ff00ff"
+      }
+    }
+  ],
+  "crystals": {
+    "count": 20,
+    "geometry": {
+      "type": "OctahedronGeometry",
+      "radius": 0.3
+    },
+    "material": {
+      "type": "MeshStandardMaterial",
+      "color": "#00d5ff",
+      "emissive": "#00d5ff",
+      "emissiveIntensity": 0.3
+    },
+    "spawnArea": {
+      "x": { "min": -20, "max": 20 },
+      "y": { "min": 1, "max": 6 },
+      "z": { "min": -20, "max": 20 }
+    },
+    "animation": {
+      "floating": true,
+      "speed": { "min": 0.3, "max": 0.8 }
+    }
+  },
+  "particles": {
+    "starfield": {
+      "count": 2000,
+      "radius": { "min": 50, "max": 200 },
+      "colors": ["#ffffff", "#00d5ff", "#0088ff", "#ff00ff"],
+      "size": 0.5,
+      "opacity": 0.8
+    }
+  },
+  "labels": [
+    {
+      "text": "← Limbo",
+      "position": { "x": 0, "y": 5.5, "z": 10 },
+      "color": "#00d5ff",
+      "scale": { "x": 4, "y": 1, "z": 1 }
+    },
+    {
+      "text": "Arena →",
+      "position": { "x": 10, "y": 5.5, "z": 0 },
+      "color": "#ff3333",
+      "scale": { "x": 4, "y": 1, "z": 1 }
+    },
+    {
+      "text": "Forest ↑",
+      "position": { "x": 0, "y": 5.5, "z": -10 },
+      "color": "#33ff33",
+      "scale": { "x": 4, "y": 1, "z": 1 }
+    },
+    {
+      "text": "← Cyb3r",
+      "position": { "x": -10, "y": 5.5, "z": 0 },
+      "color": "#ff00ff",
+      "scale": { "x": 4, "y": 1, "z": 1 }
+    }
+  ]
+}
