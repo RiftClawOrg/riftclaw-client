@@ -157,6 +157,10 @@ function handleRelayMessage(message) {
         'target_unreachable': {
           title: 'World Unreachable',
           detail: 'Cannot connect to the destination world. The world may be offline or experiencing network issues.'
+        },
+        'world_offline': {
+          title: 'World Offline',
+          detail: 'The destination world is currently offline. The Rift server may not be running or the world is under maintenance.'
         }
       };
       
@@ -522,11 +526,8 @@ function setupUIListeners() {
 // Setup keyboard shortcuts
 function setupKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
-    console.log('[Keyboard] Key pressed:', e.key, 'Target:', e.target.tagName, 'Current world:', currentWorld);
-
+    // Skip if typing in an input
     if (e.target.tagName === 'INPUT') {
-      console.log('[Keyboard] Ignoring - input focused');
-      // Allow Escape to unfocus input
       if (e.key === 'Escape') {
         e.target.blur();
       }
@@ -535,69 +536,41 @@ function setupKeyboardShortcuts() {
 
     switch (e.key.toLowerCase()) {
       case 'i':
-        console.log('[Keyboard] Toggling inventory');
         toggleInventory();
         e.preventDefault();
         break;
       case 'p':
-        console.log('[Keyboard] Toggling passport');
         togglePassport();
         e.preventDefault();
         break;
       case 'h':
-        console.log('[Keyboard] Showing help');
         toggleHelp();
         e.preventDefault();
         break;
       case 'g':
-        console.log('[Keyboard] Going home to Limbo');
         returnToLimbo();
         e.preventDefault();
         break;
       case 'r':
-        console.log('[Keyboard] Going to The Rift');
         goToRift();
         e.preventDefault();
         break;
       case 'o':
-        console.log('[Keyboard] Returning to limbo');
         returnToLimbo();
         e.preventDefault();
         break;
       case ',':
-        console.log('[Keyboard] Toggling settings');
         toggleSettings();
         e.preventDefault();
         break;
       case 'e':
         // Toggle scene editor (only in Limbo)
         if (currentWorld === 'Limbo' && limboRenderer?.editor) {
-          const isActive = limboRenderer.editor.toggle();
-          console.log('[Keyboard] Editor toggled:', isActive);
+          limboRenderer.editor.toggle();
         }
         e.preventDefault();
         break;
-      case 'w':
-      case 'a':
-      case 's':
-      case 'd':
-        // WASD debugging - only log if we're in limbo
-        if (currentWorld === 'Limbo') {
-          console.log('[Keyboard] WASD in Limbo:', e.key);
-          // Check if iframe is focused
-          const limboFrame = document.getElementById('limbo-frame');
-          const activeElement = document.activeElement;
-          console.log('[Keyboard] Active element:', activeElement?.tagName, activeElement?.id);
-          console.log('[Keyboard] Limbo frame focused:', document.activeElement === limboFrame);
-
-          // If not focused, show warning
-          if (document.activeElement !== limboFrame) {
-            console.warn('[Keyboard] Limbo frame NOT focused! Click in world to focus.');
-          }
-        }
-        break;
       case 'escape':
-        console.log('[Keyboard] Escape - closing overlays');
         inventoryOverlay.classList.add('hidden');
         passportOverlay.classList.add('hidden');
         helpOverlay.classList.add('hidden');

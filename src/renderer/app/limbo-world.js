@@ -122,11 +122,12 @@ class LimboWorldRenderer {
     // Portal to The Rift
     this.portal = this.createPortal();
     this.portal.position.set(0, 2, -10);
-    this.portal.userData.name = 'The Rift Portal';
+    // Note: createPortal sets userData.name = 'the-rift' (world ID)
+    // and userData.displayName = 'The Rift Portal' (for display)
     this.scene.add(this.portal);
 
     // Portal label (above portal) - display name for users
-    this.createLabel('The Rift →', 0, 5.5, -10);
+    this.createLabel('The Rift Portal →', 0, 5.5, -10);
 
     // Floating crystals
     this.createCrystals();
@@ -193,7 +194,8 @@ class LimboWorldRenderer {
       frame,
       center,
       particles,
-      name: 'the-rift',
+      name: 'the-rift',           // World ID for handoff
+      displayName: 'The Rift',    // Display name for UI
       url: 'https://rift.riftclaw.com'
     };
 

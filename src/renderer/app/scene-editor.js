@@ -906,7 +906,7 @@ class SceneEditor {
 
     tree.innerHTML = objects.map((obj, i) => `
       <div class="scene-item ${obj === this.selectedObject ? 'selected' : ''}" data-index="${i}">
-        ${getIcon(obj.userData.type)} ${obj.userData.name || 'Object'}
+        ${getIcon(obj.userData.type)} ${obj.userData.displayName || obj.userData.name || 'Object'}
       </div>
     `).join('');
 
