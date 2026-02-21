@@ -354,8 +354,11 @@ class LimboWorldRenderer {
     }
 
     // Update editor gizmo animation
-    if (this.editor?.isActive && this.editor.gizmo) {
-      this.editor.gizmo.rotation.y += 0.01;
+    if (this.editor?.isActive && this.editor.gizmoContainer) {
+      // Rotate the rings for visual effect
+      if (this.editor.rotateGizmo) {
+        this.editor.rotateGizmo.rotation.y += 0.01;
+      }
     }
 
     // Animate stars (slow rotation)

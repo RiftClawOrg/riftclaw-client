@@ -136,38 +136,121 @@ class SceneEditor {
   }
 
   createGizmo() {
-    // Create transformation gizmo
-    this.gizmo = new THREE.Group();
+    // Create container for all gizmo types
+    this.gizmoContainer = new THREE.Group();
+    this.gizmoContainer.visible = false;
+    this.worldRenderer.scene.add(this.gizmoContainer);
 
-    // X axis (red)
-    const xGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1);
-    const xMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const xAxis = new THREE.Mesh(xGeometry, xMaterial);
-    xAxis.rotation.z = -Math.PI / 2;
-    xAxis.position.x = 0.5;
-    xAxis.userData = { axis: 'x' };
-    this.gizmo.add(xAxis);
+    // Create Translate Gizmo (arrows)
+    this.translateGizmo = new THREE.Group();
 
-    // Y axis (green)
-    const yGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1);
-    const yMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const yAxis = new THREE.Mesh(yGeometry, yMaterial);
-    yAxis.position.y = 0.5;
-    yAxis.userData = { axis: 'y' };
-    this.gizmo.add(yAxis);
+    // X axis arrow (red)
+    this.translateGizmo.add(this.createArrow('x', 0xff0000, new THREE.Vector3(1, 0, 0)));
+    // Y axis arrow (green)
+    this.translateGizmo.add(this.createArrow('y', 0x00ff00, new THREE.Vector3(0, 1, 0)));
+    // Z axis arrow (blue)
+    this.translateGizmo.add(this.createArrow('z', 0x0000ff, new THREE.Vector3(0, 0, 1)));
 
-    // Z axis (blue)
-    const zGeometry = new THREE.CylinderGeometry(0.05, 0.05, 1);
-    const zMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-    const zAxis = new THREE.Mesh(zGeometry, zMaterial);
-    zAxis.rotation.x = Math.PI / 2;
-    zAxis.position.z = 0.5;
-    zAxis.userData = { axis: 'z' };
-    this.gizmo.add(zAxis);
+    this.gizmoContainer.add(this.translateGizmo);
 
-    // Initially hidden
-    this.gizmo.visible = false;
-    this.worldRenderer.scene.add(this.gizmo);
+    // Create Rotate Gizmo (rings)
+    this.rotateGizmo = new THREE.Group();
+
+    // X ring (red) - rotation around X axis
+    this.rotateGizmo.add(this.createRing('x', 0xff0000, new THREE.Vector3(1, 0, 0)));
+    // Y ring (green) - rotation around Y axis
+    this.rotateGizmo.add(this.createRing('y', 0x00ff00, new THREE.Vector3(0, 1, 0)));
+    // Z ring (blue) - rotation around Z axis
+    this.rotateGizmo.add(this.createRing('z', 0x0000ff, new THREE.Vector3(0, 0, 1)));
+
+    this.gizmoContainer.add(this.rotateGizmo);
+
+    // Create Scale Gizmo (boxes)
+    this.scaleGizmo = new THREE.Group();
+
+    // X box (red)
+    this.scaleGizmo.add(this.createBox('x', 0xff0000, new THREE.Vector3(1, 0, 0)));
+    // Y box (green)
+    this.scaleGizmo.add(this.createBox('y', 0x00ff00, new THREE.Vector3(0, 1, 0)));
+    // Z box (blue)
+    this.scaleGizmo.add(this.createBox('z', 0x0000ff, new THREE.Vector3(0, 0, 1)));
+    // Center box (white) - uniform scale
+    this.scaleGizmo.add(this.createCenterBox());
+
+    this.gizmoContainer.add(this.scaleGizmo);
+
+    // Reference to active gizmo
+    this.gizmo = this.translateGizmo;
+  }
+
+  createArrow(axis, color, direction) {
+    const group = new THREE.Group();
+    group.userData = { axis: axis, type: 'arrow' };
+
+    // Shaft
+    const shaftGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.8);
+    const shaftMat = new THREE.MeshBasicMaterial({ color: color });
+    const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+
+    // Position shaft along axis
+    shaft.position.copy(direction).multiplyScalar(0.4);
+    shaft.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    group.add(shaft);
+
+    // Arrow head (cone)
+    const headGeo = new THREE.ConeGeometry(0.12, 0.3, 8);
+    const headMat = new THREE.MeshBasicMaterial({ color: color });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.copy(direction).multiplyScalar(0.95);
+    head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    group.add(head);
+
+    return group;
+  }
+
+  createRing(axis, color, normal) {
+    const ringGeo = new THREE.TorusGeometry(1.2, 0.04, 8, 64);
+    const ringMat = new THREE.MeshBasicMaterial({ color: color });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.userData = { axis: axis, type: 'ring' };
+
+    // Orient ring perpendicular to axis
+    ring.lookAt(normal);
+
+    return ring;
+  }
+
+  createBox(axis, color, direction) {
+    const boxGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+    const boxMat = new THREE.MeshBasicMaterial({ color: color });
+    const box = new THREE.Mesh(boxGeo, boxMat);
+    box.position.copy(direction).multiplyScalar(1.2);
+    box.userData = { axis: axis, type: 'box' };
+
+    return box;
+  }
+
+  createCenterBox() {
+    const boxGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    const boxMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const box = new THREE.Mesh(boxGeo, boxMat);
+    box.userData = { axis: 'all', type: 'center' };
+
+    return box;
+  }
+
+  updateGizmoVisibility() {
+    if (!this.gizmoContainer) return;
+
+    // Show/hide based on transform mode
+    this.translateGizmo.visible = this.transformMode === 'translate';
+    this.rotateGizmo.visible = this.transformMode === 'rotate';
+    this.scaleGizmo.visible = this.transformMode === 'scale';
+
+    // Update reference to active gizmo
+    if (this.transformMode === 'translate') this.gizmo = this.translateGizmo;
+    else if (this.transformMode === 'rotate') this.gizmo = this.rotateGizmo;
+    else if (this.transformMode === 'scale') this.gizmo = this.scaleGizmo;
   }
 
   showUI() {
@@ -186,6 +269,9 @@ class SceneEditor {
     this.ui.querySelectorAll('[data-mode]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
     });
+
+    // Update gizmo visibility
+    this.updateGizmoVisibility();
 
     this.updateStatus(`Mode: ${mode}`);
   }
@@ -238,9 +324,11 @@ class SceneEditor {
     this.selectedObject = object;
     this.selectedObjects = [object];
 
-    // Show gizmo at object position
-    this.gizmo.position.copy(object.position);
-    this.gizmo.visible = true;
+    // Show gizmo container at object position
+    this.gizmoContainer.position.copy(object.position);
+    this.gizmoContainer.rotation.copy(object.rotation);
+    this.updateGizmoVisibility();
+    this.gizmoContainer.visible = true;
 
     // Highlight object
     this.highlightObject(object, true);
@@ -259,7 +347,7 @@ class SceneEditor {
 
     this.selectedObject = null;
     this.selectedObjects = [];
-    this.gizmo.visible = false;
+    this.gizmoContainer.visible = false;
 
     this.updatePropertiesPanel();
     this.updateSceneTree();
@@ -286,17 +374,19 @@ class SceneEditor {
     this.isDragging = true;
     this.dragAxis = axis;
     this.dragStartPosition = this.selectedObject.position.clone();
+    this.dragStartRotation = this.selectedObject.rotation.clone();
+    this.dragStartScale = this.selectedObject.scale.clone();
+    this.dragStartMouse = { x: this.mouse.x, y: this.mouse.y };
 
-    // Create invisible plane for dragging
-    const planeGeometry = new THREE.PlaneGeometry(100, 100);
-    const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
-    this.dragPlane = new THREE.Mesh(planeGeometry, planeMaterial);
-
-    // Orient plane to face camera
-    this.dragPlane.lookAt(this.worldRenderer.camera.position);
-    this.dragPlane.position.copy(this.selectedObject.position);
-
-    this.worldRenderer.scene.add(this.dragPlane);
+    if (this.transformMode === 'translate') {
+      // Create invisible plane for dragging
+      const planeGeometry = new THREE.PlaneGeometry(100, 100);
+      const planeMaterial = new THREE.MeshBasicMaterial({ visible: false });
+      this.dragPlane = new THREE.Mesh(planeGeometry, planeMaterial);
+      this.dragPlane.lookAt(this.worldRenderer.camera.position);
+      this.dragPlane.position.copy(this.selectedObject.position);
+      this.worldRenderer.scene.add(this.dragPlane);
+    }
   }
 
   handleDrag(event, canvas) {
@@ -306,23 +396,66 @@ class SceneEditor {
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-    this.raycaster.setFromCamera(this.mouse, this.worldRenderer.camera);
+    const deltaX = this.mouse.x - this.dragStartMouse.x;
+    const deltaY = this.mouse.y - this.dragStartMouse.y;
 
+    if (this.transformMode === 'translate') {
+      this.handleTranslateDrag();
+    } else if (this.transformMode === 'rotate') {
+      this.handleRotateDrag(deltaX, deltaY);
+    } else if (this.transformMode === 'scale') {
+      this.handleScaleDrag(deltaX, deltaY);
+    }
+
+    this.updatePropertiesPanel();
+  }
+
+  handleTranslateDrag() {
+    this.raycaster.setFromCamera(this.mouse, this.worldRenderer.camera);
     const intersects = this.raycaster.intersectObject(this.dragPlane);
+
     if (intersects.length > 0) {
       const point = intersects[0].point;
 
-      if (this.transformMode === 'translate') {
-        // Move along selected axis
-        if (this.dragAxis === 'x') this.selectedObject.position.x = point.x;
-        if (this.dragAxis === 'y') this.selectedObject.position.y = point.y;
-        if (this.dragAxis === 'z') this.selectedObject.position.z = point.z;
+      // Move along selected axis
+      if (this.dragAxis === 'x') this.selectedObject.position.x = point.x;
+      if (this.dragAxis === 'y') this.selectedObject.position.y = point.y;
+      if (this.dragAxis === 'z') this.selectedObject.position.z = point.z;
 
-        // Update gizmo position
-        this.gizmo.position.copy(this.selectedObject.position);
-      }
+      // Update gizmo position
+      this.gizmoContainer.position.copy(this.selectedObject.position);
+    }
+  }
 
-      this.updatePropertiesPanel();
+  handleRotateDrag(deltaX, deltaY) {
+    const sensitivity = 3;
+
+    if (this.dragAxis === 'x') {
+      this.selectedObject.rotation.x = this.dragStartRotation.x + deltaY * sensitivity;
+    } else if (this.dragAxis === 'y') {
+      this.selectedObject.rotation.y = this.dragStartRotation.y + deltaX * sensitivity;
+    } else if (this.dragAxis === 'z') {
+      this.selectedObject.rotation.z = this.dragStartRotation.z + deltaX * sensitivity;
+    }
+
+    // Update gizmo rotation to match
+    this.gizmoContainer.rotation.copy(this.selectedObject.rotation);
+  }
+
+  handleScaleDrag(deltaX, deltaY) {
+    const sensitivity = 2;
+    const delta = (deltaX + deltaY) * sensitivity;
+
+    if (this.dragAxis === 'all') {
+      // Uniform scale
+      const scale = Math.max(0.1, 1 + delta);
+      this.selectedObject.scale.setScalar(scale * this.dragStartScale.x);
+    } else {
+      // Axis scale
+      const scale = Math.max(0.1, 1 + delta);
+      if (this.dragAxis === 'x') this.selectedObject.scale.x = scale * this.dragStartScale.x;
+      if (this.dragAxis === 'y') this.selectedObject.scale.y = scale * this.dragStartScale.y;
+      if (this.dragAxis === 'z') this.selectedObject.scale.z = scale * this.dragStartScale.z;
     }
   }
 
