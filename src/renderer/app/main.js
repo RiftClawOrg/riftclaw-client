@@ -31,16 +31,36 @@ const chatInput = document.getElementById('chat-input');
 // Initialize
 async function init() {
   console.log('[Renderer] RiftWalker initializing...');
+  console.log('[Renderer] User agent:', navigator.userAgent);
+  console.log('[Renderer] Platform:', navigator.platform);
 
   showLoading('Connecting to relay...', 'Establishing secure connection');
 
   // Load passport
-  passport = await window.rift.getPassport();
-  console.log('[Renderer] Passport loaded:', passport.agent_id);
+  try {
+    passport = await window.rift.getPassport();
+    if (!passport || !passport.agent_id) {
+      console.warn('[Renderer] No valid passport found, will use guest mode');
+      showToast('Running in guest mode - some features limited', 'warning');
+    } else {
+      console.log('[Renderer] Passport loaded:', passport.agent_id);
+      console.log('[Renderer] Agent name:', passport.agent_name);
+      console.log('[Renderer] Home world:', passport.home_world);
+    }
+  } catch (err) {
+    console.error('[Renderer] Failed to load passport:', err);
+    showToast('Failed to load passport - some features may not work', 'error');
+  }
 
   // Load inventory
-  inventory = await window.rift.getInventory();
-  updateInventoryUI();
+  try {
+    inventory = await window.rift.getInventory();
+    console.log('[Renderer] Inventory loaded:', inventory.length, 'items');
+    updateInventoryUI();
+  } catch (err) {
+    console.error('[Renderer] Failed to load inventory:', err);
+    inventory = [];
+  }
 
   // Setup event listeners
   setupRelayListeners();
@@ -55,6 +75,7 @@ async function init() {
 
   hideLoading();
   showToast('Welcome to RiftWalker!', 'success');
+  console.log('[Renderer] Initialization complete');
 }
 
 // Setup relay event listeners
@@ -98,18 +119,66 @@ function handleRelayMessage(message) {
       
     case 'handoff_rejected':
       hideLoading();
+      
+      // Detailed error messages with explanations
       const errorMessages = {
-        'low_reputation': 'Handoff rejected: Low reputation',
-        'invalid_signature': 'Handoff rejected: Invalid passport signature',
-        'passport_expired': 'Handoff rejected: Passport expired',
-        'invalid_inventory': 'Handoff rejected: Invalid inventory data',
-        'processing_error': 'Handoff rejected: Server error',
-        'server_full': 'Handoff rejected: World is full',
-        'banned': 'Handoff rejected: You are banned from this world'
+        'low_reputation': {
+          title: 'Access Denied: Low Reputation',
+          detail: 'Your reputation score is too low to enter this world. Complete quests or help other players to increase your reputation.'
+        },
+        'invalid_signature': {
+          title: 'Passport Error: Invalid Signature',
+          detail: 'Your passport signature could not be verified. Try restarting the client or regenerating your passport.'
+        },
+        'passport_expired': {
+          title: 'Passport Expired',
+          detail: 'Your passport has expired. A new passport will be generated automatically on restart.'
+        },
+        'invalid_inventory': {
+          title: 'Inventory Error',
+          detail: 'Your inventory data appears corrupted. Try clearing your inventory or restarting the client.'
+        },
+        'processing_error': {
+          title: 'Server Error',
+          detail: 'The destination world encountered an error processing your request. The world may be restarting or experiencing issues.'
+        },
+        'server_full': {
+          title: 'World Full',
+          detail: 'The destination world has reached maximum capacity. Try again in a few minutes.'
+        },
+        'banned': {
+          title: 'Access Denied: Banned',
+          detail: 'You have been banned from this world. Contact the world administrator for more information.'
+        },
+        'invalid_passport': {
+          title: 'Invalid Passport',
+          detail: 'Your passport is missing required fields. Try regenerating your passport by restarting the client.'
+        },
+        'target_unreachable': {
+          title: 'World Unreachable',
+          detail: 'Cannot connect to the destination world. The world may be offline or experiencing network issues.'
+        }
       };
-      const errorMsg = errorMessages[message.reason] || `Handoff rejected: ${message.reason}`;
-      showToast(errorMsg, 'error');
-      console.error('[Handoff] Rejected:', message.reason, message.message);
+      
+      const errorInfo = errorMessages[message.reason] || {
+        title: `Handoff Rejected: ${message.reason}`,
+        detail: message.message || 'No additional details provided by the server.'
+      };
+      
+      const errorMsg = `${errorInfo.title}\n\n${errorInfo.detail}`;
+      showToast(errorInfo.title, 'error');
+      
+      console.error('[Handoff] Rejected:', {
+        reason: message.reason,
+        message: message.message,
+        target_world: message.target_world,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Show detailed error in alert for debugging
+      if (message.message) {
+        console.error('[Handoff] Server message:', message.message);
+      }
       break;
       
     case 'chat':
@@ -243,7 +312,14 @@ function initLimbo() {
   });
   limboRenderer.init();
 
-  console.log('[Renderer] Limbo initialized');
+  // Update UI to show we're in Limbo
+  currentWorld = 'Limbo';
+  currentWorldEl.textContent = currentWorld;
+  worldTypeEl.textContent = 'Local';
+  worldTypeEl.classList.remove('remote');
+  worldTypeEl.classList.add('local');
+
+  console.log('[Renderer] Limbo initialized, UI updated');
 }
 
 // Render The Rift world locally
@@ -274,8 +350,13 @@ function renderRiftWorld(scene) {
 
 // Travel to a world
 async function travelToWorld(targetWorld, targetUrl) {
+  console.log(`[Travel] Initiating travel to ${targetWorld} at ${targetUrl}`);
+  console.log(`[Travel] Current world: ${currentWorld}`);
+  console.log(`[Travel] Passport:`, passport);
+  
   // Check connection directly with main process
   const connected = await window.rift.isRelayConnected();
+  console.log(`[Travel] Relay connected: ${connected}`);
 
   if (!connected) {
     console.error('[Travel] Not connected to relay');
@@ -283,17 +364,38 @@ async function travelToWorld(targetWorld, targetUrl) {
     return;
   }
   
+  // Validate passport exists
+  if (!passport || !passport.agent_id) {
+    console.error('[Travel] No passport available');
+    showToast('Travel failed: No passport found. Try restarting the client.', 'error');
+    return;
+  }
+  
   showLoading(`Traveling to ${targetWorld}...`, 'Initializing handoff sequence');
   
   // Prepare passport with inventory
+  const timestamp = Date.now() / 1000;
   const handoffPassport = {
-    ...passport,
+    agent_id: passport.agent_id,
+    agent_name: passport.agent_name || 'Traveler',
+    public_key: passport.public_key || '',
+    home_world: passport.home_world || 'Limbo',
+    reputation: passport.reputation || 0,
+    created_at: passport.created_at || timestamp,
     source_world: currentWorld,
     target_world: targetWorld,
     target_url: targetUrl,
-    timestamp: Date.now() / 1000,
-    inventory: JSON.stringify(inventory)
+    timestamp: timestamp,
+    inventory: JSON.stringify(inventory || [])
   };
+  
+  console.log('[Travel] Sending handoff request:', {
+    type: 'handoff_request',
+    agent_id: passport.agent_id,
+    source_world: currentWorld,
+    target_world: targetWorld,
+    passport_fields: Object.keys(handoffPassport)
+  });
   
   // Send handoff request
   const result = await window.rift.sendToRelay({
@@ -304,9 +406,13 @@ async function travelToWorld(targetWorld, targetUrl) {
     passport: handoffPassport
   });
   
+  console.log('[Travel] Handoff request result:', result);
+  
   if (!result.success) {
     hideLoading();
-    showToast('Failed to send travel request', 'error');
+    const errorDetail = result.error || 'Unknown error';
+    console.error('[Travel] Failed to send handoff request:', errorDetail);
+    showToast(`Travel failed: ${errorDetail}`, 'error');
   }
 }
 
