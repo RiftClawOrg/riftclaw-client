@@ -163,11 +163,38 @@ class SceneEditor {
       const el = document.getElementById(id);
       if (el) {
         el.addEventListener('click', (e) => {
+          e.preventDefault();
           e.stopPropagation();
+          console.log(`[SceneEditor] Clicked: ${id}`);
           callback();
         });
+      } else {
+        console.warn(`[SceneEditor] Element not found: ${id}`);
       }
     };
+    
+    // Setup menu toggle behavior (click to open/close)
+    this.ui.querySelectorAll('.editor-menu').forEach(menu => {
+      const btn = menu.querySelector('.editor-menu-btn');
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Close other menus
+          this.ui.querySelectorAll('.editor-menu').forEach(m => {
+            if (m !== menu) m.classList.remove('active');
+          });
+          // Toggle this menu
+          menu.classList.toggle('active');
+          console.log('[SceneEditor] Menu toggled:', menu.classList.contains('active'));
+        });
+      }
+      
+      // Close menu when clicking outside
+      document.addEventListener('click', () => {
+        menu.classList.remove('active');
+      });
+    });
 
     // Tool mode buttons (in dropdown)
     this.ui.querySelectorAll('[data-mode]').forEach(btn => {
@@ -444,6 +471,13 @@ class SceneEditor {
       this.worldRenderer.gridHelper.userData.type = 'grid';
       this.worldRenderer.gridHelper.userData.name = 'Grid';
       objects.push(this.worldRenderer.gridHelper);
+    }
+    
+    // Player Mesh
+    if (this.worldRenderer.playerMesh) {
+      this.worldRenderer.playerMesh.userData.type = 'player';
+      this.worldRenderer.playerMesh.userData.name = 'Player Avatar';
+      objects.push(this.worldRenderer.playerMesh);
     }
     
     return objects;

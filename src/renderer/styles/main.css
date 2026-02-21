@@ -804,8 +804,14 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-.editor-menu:hover .editor-menu-dropdown {
+.editor-menu:hover .editor-menu-dropdown,
+.editor-menu.active .editor-menu-dropdown {
   display: block;
+}
+
+.editor-menu-dropdown {
+  pointer-events: auto;
+  z-index: 10001;
 }
 
 .editor-menu-dropdown button {

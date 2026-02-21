@@ -109,17 +109,20 @@ class LimboWorldRenderer {
       roughness: 0.8,
       metalness: 0.2
     });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    this.scene.add(floor);
+    this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    this.floor.rotation.x = -Math.PI / 2;
+    this.floor.userData = { type: 'floor', name: 'Floor' };
+    this.scene.add(this.floor);
 
     // Grid
-    const gridHelper = new THREE.GridHelper(50, 50, 0x00d5ff, 0x1a1a2a);
-    this.scene.add(gridHelper);
+    this.gridHelper = new THREE.GridHelper(50, 50, 0x00d5ff, 0x1a1a2a);
+    this.gridHelper.userData = { type: 'grid', name: 'Grid' };
+    this.scene.add(this.gridHelper);
 
     // Portal to The Rift
     this.portal = this.createPortal();
     this.portal.position.set(0, 2, -10);
+    this.portal.userData.name = 'The Rift Portal';
     this.scene.add(this.portal);
 
     // Portal label (above portal) - display name for users
