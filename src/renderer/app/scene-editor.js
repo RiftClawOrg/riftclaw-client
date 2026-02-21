@@ -52,27 +52,71 @@ class SceneEditor {
     overlay.id = 'scene-editor-overlay';
     overlay.className = 'scene-editor-overlay hidden';
     overlay.innerHTML = `
-      <!-- Top Bar -->
-      <div class="editor-top-bar">
+      <!-- Menu Bar -->
+      <div class="editor-menu-bar">
         <span class="editor-title">🎨 Scene Editor</span>
-        <div class="editor-tools">
-          <button class="editor-btn ${this.transformMode === 'translate' ? 'active' : ''}" data-mode="translate" title="Move (T)">↔️ Move</button>
-          <button class="editor-btn ${this.transformMode === 'rotate' ? 'active' : ''}" data-mode="rotate" title="Rotate (R)">🔄 Rotate</button>
-          <button class="editor-btn ${this.transformMode === 'scale' ? 'active' : ''}" data-mode="scale" title="Scale (S)">📏 Scale</button>
+        
+        <!-- File Menu -->
+        <div class="editor-menu">
+          <button class="editor-menu-btn">File</button>
+          <div class="editor-menu-dropdown">
+            <button id="editor-save">💾 Save Scene</button>
+            <button id="editor-load">📂 Load Scene</button>
+            <button id="editor-export">📤 Export for Server</button>
+            <hr>
+            <button id="editor-close">✕ Close Editor</button>
+          </div>
         </div>
-        <div class="editor-actions">
-          <button id="editor-add-portal" class="editor-btn" title="Add Portal">🌀 Portal</button>
-          <button id="editor-add-crystal" class="editor-btn" title="Add Crystal">💎 Crystal</button>
-          <button id="editor-add-light" class="editor-btn" title="Add Light">💡 Light</button>
-          <button id="editor-duplicate" class="editor-btn" title="Duplicate (Ctrl+D)">📋 Duplicate</button>
-          <button id="editor-delete" class="editor-btn danger" title="Delete (Del)">🗑️ Delete</button>
+
+        <!-- Tools Menu -->
+        <div class="editor-menu">
+          <button class="editor-menu-btn">Tools</button>
+          <div class="editor-menu-dropdown">
+            <button data-mode="translate" class="${this.transformMode === 'translate' ? 'active' : ''}">↔️ Move Tool (T)</button>
+            <button data-mode="rotate" class="${this.transformMode === 'rotate' ? 'active' : ''}">🔄 Rotate Tool (R)</button>
+            <button data-mode="scale" class="${this.transformMode === 'scale' ? 'active' : ''}">📏 Scale Tool (S)</button>
+            <hr>
+            <button id="editor-duplicate">📋 Duplicate (Ctrl+D)</button>
+            <button id="editor-delete" class="danger">🗑️ Delete (Del)</button>
+          </div>
         </div>
-        <div class="editor-file">
-          <button id="editor-save" class="editor-btn primary" title="Save Scene">💾 Save</button>
-          <button id="editor-load" class="editor-btn" title="Load Scene">📂 Load</button>
-          <button id="editor-export" class="editor-btn" title="Export JSON">📤 Export</button>
+
+        <!-- Entities Menu -->
+        <div class="editor-menu">
+          <button class="editor-menu-btn">Entities</button>
+          <div class="editor-menu-dropdown">
+            <button id="editor-add-portal">🌀 Portal</button>
+            <button id="editor-add-light">💡 Light</button>
+            <button id="editor-add-particles">✨ Particles</button>
+          </div>
         </div>
-        <button id="editor-close" class="editor-btn" title="Close Editor (E)">✕ Close</button>
+
+        <!-- Objects Menu -->
+        <div class="editor-menu">
+          <button class="editor-menu-btn">Objects</button>
+          <div class="editor-menu-dropdown">
+            <button id="editor-add-crystal">💎 Crystal</button>
+            <button id="editor-add-platform">⬜ Platform</button>
+            <button id="editor-add-chair">🪑 Chair</button>
+            <button id="editor-add-desk">📝 Desk</button>
+            <hr>
+            <button id="editor-import-model">📥 Import 3D Model...</button>
+          </div>
+        </div>
+
+        <!-- View Menu -->
+        <div class="editor-menu">
+          <button class="editor-menu-btn">View</button>
+          <div class="editor-menu-dropdown">
+            <button id="editor-toggle-grid">⊞ Toggle Grid</button>
+            <button id="editor-toggle-stars">✦ Toggle Stars</button>
+            <button id="editor-reset-camera">📷 Reset Camera</button>
+          </div>
+        </div>
+
+        <div class="editor-spacer"></div>
+        
+        <span class="editor-help-text">Press E to exit</span>
       </div>
 
       <!-- Left Panel - Scene Tree -->
@@ -92,11 +136,12 @@ class SceneEditor {
       <!-- Bottom Bar - Status -->
       <div class="editor-bottom-bar">
         <span id="editor-status">Ready</span>
-        <span class="editor-help">Click to select • Drag to move • E to exit</span>
+        <span class="editor-hint">Click to select • Drag handles to transform</span>
       </div>
 
       <!-- Hidden file input for load -->
       <input type="file" id="editor-file-input" accept=".json" style="display: none;">
+      <input type="file" id="editor-model-input" accept=".glb,.gltf,.obj" style="display: none;">
     `;
 
     document.body.appendChild(overlay);
@@ -107,32 +152,43 @@ class SceneEditor {
   }
 
   setupUIListeners() {
-    // Tool mode buttons
+    // Tool mode buttons (in dropdown)
     this.ui.querySelectorAll('[data-mode]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this.setTransformMode(e.target.dataset.mode);
       });
     });
 
-    // Add object buttons
-    document.getElementById('editor-add-portal').addEventListener('click', () => this.addPortal());
-    document.getElementById('editor-add-crystal').addEventListener('click', () => this.addCrystal());
-    document.getElementById('editor-add-light').addEventListener('click', () => this.addLight());
+    // Entities menu
+    document.getElementById('editor-add-portal')?.addEventListener('click', () => this.addPortal());
+    document.getElementById('editor-add-light')?.addEventListener('click', () => this.addLight());
+    document.getElementById('editor-add-particles')?.addEventListener('click', () => this.addParticles());
 
-    // Action buttons
-    document.getElementById('editor-duplicate').addEventListener('click', () => this.duplicateSelected());
-    document.getElementById('editor-delete').addEventListener('click', () => this.deleteSelected());
+    // Objects menu
+    document.getElementById('editor-add-crystal')?.addEventListener('click', () => this.addCrystal());
+    document.getElementById('editor-add-platform')?.addEventListener('click', () => this.addPlatform());
+    document.getElementById('editor-add-chair')?.addEventListener('click', () => this.addChair());
+    document.getElementById('editor-add-desk')?.addEventListener('click', () => this.addDesk());
+    document.getElementById('editor-import-model')?.addEventListener('click', () => this.importModel());
 
-    // File buttons
-    document.getElementById('editor-save').addEventListener('click', () => this.saveScene());
-    document.getElementById('editor-load').addEventListener('click', () => this.loadScene());
-    document.getElementById('editor-export').addEventListener('click', () => this.exportScene());
+    // Tools menu
+    document.getElementById('editor-duplicate')?.addEventListener('click', () => this.duplicateSelected());
+    document.getElementById('editor-delete')?.addEventListener('click', () => this.deleteSelected());
 
-    // Close button
-    document.getElementById('editor-close').addEventListener('click', () => this.toggle());
+    // File menu
+    document.getElementById('editor-save')?.addEventListener('click', () => this.saveScene());
+    document.getElementById('editor-load')?.addEventListener('click', () => this.loadScene());
+    document.getElementById('editor-export')?.addEventListener('click', () => this.exportScene());
+    document.getElementById('editor-close')?.addEventListener('click', () => this.toggle());
 
-    // File input
-    document.getElementById('editor-file-input').addEventListener('change', (e) => this.handleFileLoad(e));
+    // View menu
+    document.getElementById('editor-toggle-grid')?.addEventListener('click', () => this.toggleGrid());
+    document.getElementById('editor-toggle-stars')?.addEventListener('click', () => this.toggleStars());
+    document.getElementById('editor-reset-camera')?.addEventListener('click', () => this.resetCamera());
+
+    // File inputs
+    document.getElementById('editor-file-input')?.addEventListener('change', (e) => this.handleFileLoad(e));
+    document.getElementById('editor-model-input')?.addEventListener('change', (e) => this.handleModelImport(e));
   }
 
   createGizmo() {
@@ -314,8 +370,46 @@ class SceneEditor {
   getEditableObjects() {
     // Return all editable objects in the scene
     const objects = [];
-    if (this.worldRenderer.portal) objects.push(this.worldRenderer.portal);
-    if (this.worldRenderer.crystals) objects.push(...this.worldRenderer.crystals);
+    
+    // Portal
+    if (this.worldRenderer.portal) {
+      this.worldRenderer.portal.userData.type = 'portal';
+      this.worldRenderer.portal.userData.name = this.worldRenderer.portal.userData.name || 'The Rift Portal';
+      objects.push(this.worldRenderer.portal);
+    }
+    
+    // Crystals
+    if (this.worldRenderer.crystals) {
+      this.worldRenderer.crystals.forEach((crystal, i) => {
+        crystal.userData.type = 'crystal';
+        crystal.userData.name = crystal.userData.name || `Crystal ${i + 1}`;
+        objects.push(crystal);
+      });
+    }
+    
+    // Lights
+    if (this.worldRenderer.lights) {
+      this.worldRenderer.lights.forEach((light, i) => {
+        light.userData.type = 'light';
+        light.userData.name = light.userData.name || `Light ${i + 1}`;
+        objects.push(light);
+      });
+    }
+    
+    // Stars (as a group)
+    if (this.worldRenderer.stars) {
+      this.worldRenderer.stars.userData.type = 'stars';
+      this.worldRenderer.stars.userData.name = 'Starfield';
+      objects.push(this.worldRenderer.stars);
+    }
+    
+    // Grid/Floor
+    if (this.worldRenderer.gridHelper) {
+      this.worldRenderer.gridHelper.userData.type = 'grid';
+      this.worldRenderer.gridHelper.userData.name = 'Grid';
+      objects.push(this.worldRenderer.gridHelper);
+    }
+    
     return objects;
   }
 
@@ -575,6 +669,65 @@ class SceneEditor {
     this.deselectAll();
     this.updateSceneTree();
     this.updateStatus('Deleted object');
+  }
+
+  // New object types (placeholders for now)
+  addParticles() {
+    this.updateStatus('Particles: Coming soon!');
+  }
+
+  addPlatform() {
+    const geometry = new THREE.BoxGeometry(2, 0.2, 2);
+    const material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    const platform = new THREE.Mesh(geometry, material);
+    platform.position.set(0, 1, 0);
+    platform.userData = { name: 'Platform', type: 'platform' };
+    this.worldRenderer.scene.add(platform);
+    this.worldRenderer.crystals.push(platform);
+    this.selectObject(platform);
+    this.updateSceneTree();
+    this.updateStatus('Added platform');
+  }
+
+  addChair() {
+    this.updateStatus('Chair: Coming soon! (Need 3D model)');
+  }
+
+  addDesk() {
+    this.updateStatus('Desk: Coming soon! (Need 3D model)');
+  }
+
+  importModel() {
+    document.getElementById('editor-model-input').click();
+  }
+
+  handleModelImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    this.updateStatus(`Importing ${file.name}... (Coming soon!)`);
+  }
+
+  // View menu actions
+  toggleGrid() {
+    if (this.worldRenderer.gridHelper) {
+      this.worldRenderer.gridHelper.visible = !this.worldRenderer.gridHelper.visible;
+      this.updateStatus(this.worldRenderer.gridHelper.visible ? 'Grid visible' : 'Grid hidden');
+    }
+  }
+
+  toggleStars() {
+    if (this.worldRenderer.stars) {
+      this.worldRenderer.stars.visible = !this.worldRenderer.stars.visible;
+      this.updateStatus(this.worldRenderer.stars.visible ? 'Stars visible' : 'Stars hidden');
+    }
+  }
+
+  resetCamera() {
+    // Reset camera to default position
+    this.worldRenderer.mechanics.playerPosition.set(0, 1.6, 5);
+    this.worldRenderer.mechanics.yaw = 0;
+    this.worldRenderer.mechanics.pitch = 0;
+    this.updateStatus('Camera reset');
   }
 
   // UI Updates
