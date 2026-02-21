@@ -1,12 +1,11 @@
 @echo off
-title RiftWalker Setup and Launch
+title RiftWalker Setup
 
 echo ==========================================
 echo    RiftWalker Setup
 echo ==========================================
 echo.
 
-REM Check dependencies
 where git >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Git not found. Install from: https://git-scm.com/download/win
@@ -21,32 +20,23 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Setup
 if exist "riftclaw-client" (
     echo [INFO] Updating existing installation...
     cd riftclaw-client
     git pull
+    npm install
 ) else (
     echo [INFO] Downloading RiftWalker...
     git clone https://github.com/RiftClawOrg/riftclaw-client.git
     cd riftclaw-client
+    npm install
 )
 
-echo [INFO] Installing dependencies...
-npm install
-
 echo.
 echo ==========================================
-echo    Starting RiftWalker
+echo    Setup Complete!
 echo ==========================================
 echo.
-
-REM Launch in a way that keeps window open
-REM Using START with /B keeps it in same window
-start /B /WAIT cmd /C "npm run dev"
-
+echo To start RiftWalker, run: start-riftwalker.bat
 echo.
-echo ==========================================
-echo    RiftWalker has stopped
-echo ==========================================
 pause
