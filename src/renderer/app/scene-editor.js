@@ -60,9 +60,9 @@ class SceneEditor {
         <div class="editor-menu">
           <button class="editor-menu-btn">File</button>
           <div class="editor-menu-dropdown">
+            <button id="editor-new">🆕 New Scene</button>
             <button id="editor-save">💾 Save Scene</button>
             <button id="editor-load">📂 Load Scene</button>
-            <button id="editor-export">📤 Export for Server</button>
             <hr>
             <button id="editor-close">✕ Close Editor</button>
           </div>
@@ -176,9 +176,9 @@ class SceneEditor {
     document.getElementById('editor-delete')?.addEventListener('click', () => this.deleteSelected());
 
     // File menu
+    document.getElementById('editor-new')?.addEventListener('click', () => this.newScene());
     document.getElementById('editor-save')?.addEventListener('click', () => this.saveScene());
     document.getElementById('editor-load')?.addEventListener('click', () => this.loadScene());
-    document.getElementById('editor-export')?.addEventListener('click', () => this.exportScene());
     document.getElementById('editor-close')?.addEventListener('click', () => this.toggle());
 
     // View menu
@@ -669,6 +669,39 @@ class SceneEditor {
     this.deselectAll();
     this.updateSceneTree();
     this.updateStatus('Deleted object');
+  }
+
+  // New Scene
+  newScene() {
+    // Confirm if there are unsaved changes
+    if (this.worldRenderer.crystals.length > 10) { // Arbitrary check
+      if (!confirm('Create new scene? Unsaved changes will be lost.')) {
+        return;
+      }
+    }
+
+    // Clear all objects except The Rift portal
+    this.getEditableObjects().forEach(obj => {
+      if (obj !== this.worldRenderer.portal) {
+        this.worldRenderer.scene.remove(obj);
+      }
+    });
+
+    // Clear arrays
+    this.worldRenderer.crystals = [];
+    if (this.worldRenderer.lights) this.worldRenderer.lights = [];
+
+    // The Rift portal stays as the only object
+    this.worldRenderer.portal.position.set(0, 2, -10);
+    this.worldRenderer.portal.userData.name = 'The Rift';
+    this.worldRenderer.portal.userData.url = 'https://rift.riftclaw.com';
+
+    // Reset camera
+    this.worldRenderer.mechanics.playerPosition.set(0, 1.6, 5);
+
+    this.deselectAll();
+    this.updateSceneTree();
+    this.updateStatus('New scene created (The Rift portal included)');
   }
 
   // New object types (placeholders for now)

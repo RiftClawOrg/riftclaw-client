@@ -58,7 +58,8 @@ npm run build
 | `I` | Toggle inventory |
 | `P` | Toggle passport |
 | `H` | Help menu |
-| `G` | Go to The Rift (home) |
+| `G` | Go Home (Limbo) |
+| `R` | Go to The Rift |
 | `O` | Return to Limbo |
 | `,` | Toggle settings |
 | `Enter` | Focus chat |

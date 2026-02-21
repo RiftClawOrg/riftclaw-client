@@ -339,8 +339,8 @@ function returnToLimbo() {
   showToast('Returned to Limbo', 'success');
 }
 
-// Go to The Rift (home)
-function goHome() {
+// Go to The Rift
+function goToRift() {
   travelToWorld('the-rift', 'https://rift.riftclaw.com');
 }
 
@@ -377,8 +377,15 @@ function setupUIListeners() {
     document.getElementById('volume-value').textContent = e.target.value + '%';
   });
 
-  // Home button
-  document.getElementById('btn-home').addEventListener('click', goHome);
+  // Home button - goes to Limbo
+  document.getElementById('btn-home').addEventListener('click', () => {
+    returnToLimbo();
+  });
+
+  // Rift button - goes to The Rift
+  document.getElementById('btn-rift')?.addEventListener('click', () => {
+    goToRift();
+  });
 
   // Help button
   document.getElementById('btn-help')?.addEventListener('click', toggleHelp);
@@ -387,8 +394,13 @@ function setupUIListeners() {
   // Editor button (only works in Limbo)
   document.getElementById('btn-editor')?.addEventListener('click', () => {
     if (currentWorld === 'Limbo' && limboRenderer?.editor) {
-      const isActive = limboRenderer.editor.toggle();
-      console.log('[Editor] Toggled via button:', isActive);
+      // Close editor if already open
+      if (limboRenderer.editor.isActive) {
+        limboRenderer.editor.toggle();
+      } else {
+        limboRenderer.editor.toggle();
+      }
+      console.log('[Editor] Toggled via button:', limboRenderer.editor.isActive);
     } else {
       showToast('Editor only available in Limbo', 'warning');
     }
@@ -432,8 +444,13 @@ function setupKeyboardShortcuts() {
         e.preventDefault();
         break;
       case 'g':
-        console.log('[Keyboard] Going home');
-        goHome();
+        console.log('[Keyboard] Going home to Limbo');
+        returnToLimbo();
+        e.preventDefault();
+        break;
+      case 'r':
+        console.log('[Keyboard] Going to The Rift');
+        goToRift();
         e.preventDefault();
         break;
       case 'o':
