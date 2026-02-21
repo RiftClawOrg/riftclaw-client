@@ -37,19 +37,12 @@ npm install
 
 echo.
 echo ==========================================
-echo    Starting RiftWalker...
+echo    Setup Complete!
 echo ==========================================
 echo.
-echo The client is starting...
-echo This window will stay open.
+echo Starting RiftWalker...
 echo.
 
-REM Run npm and wait for it to complete
-call npm run dev
-
-echo.
-echo ==========================================
-echo    RiftWalker has closed
-echo ==========================================
-echo.
-pause
+REM Use cmd /k to keep window open
+REM This runs npm run dev and keeps the prompt
+cmd /k "npm run dev"
