@@ -23,6 +23,9 @@ class SceneEditor {
 
     // Editor UI elements
     this.ui = null;
+    
+    // Scene info
+    this.sceneName = 'Limbo';
   }
 
   init() {
@@ -55,6 +58,7 @@ class SceneEditor {
       <!-- Menu Bar -->
       <div class="editor-menu-bar">
         <span class="editor-title">🎨 Scene Editor</span>
+        <span class="editor-scene-name" id="editor-scene-name">📁 Limbo</span>
         
         <!-- File Menu -->
         <div class="editor-menu">
@@ -371,6 +375,13 @@ class SceneEditor {
     // Return all editable objects in the scene
     const objects = [];
     
+    // Floor
+    if (this.worldRenderer.floor) {
+      this.worldRenderer.floor.userData.type = 'floor';
+      this.worldRenderer.floor.userData.name = 'Floor';
+      objects.push(this.worldRenderer.floor);
+    }
+    
     // Portal
     if (this.worldRenderer.portal) {
       this.worldRenderer.portal.userData.type = 'portal';
@@ -671,37 +682,82 @@ class SceneEditor {
     this.updateStatus('Deleted object');
   }
 
+  // Update scene name display
+  updateSceneName(name) {
+    this.sceneName = name;
+    const nameEl = document.getElementById('editor-scene-name');
+    if (nameEl) {
+      nameEl.textContent = '📁 ' + name;
+    }
+  }
+
   // New Scene
   newScene() {
     // Confirm if there are unsaved changes
-    if (this.worldRenderer.crystals.length > 10) { // Arbitrary check
+    const objects = this.getEditableObjects();
+    if (objects.length > 1) {
       if (!confirm('Create new scene? Unsaved changes will be lost.')) {
         return;
       }
     }
 
-    // Clear all objects except The Rift portal
+    // Ask for scene name
+    const sceneName = prompt('Enter scene name:', 'My World');
+    if (!sceneName) return;
+
+    // Clear all objects
     this.getEditableObjects().forEach(obj => {
-      if (obj !== this.worldRenderer.portal) {
-        this.worldRenderer.scene.remove(obj);
-      }
+      this.worldRenderer.scene.remove(obj);
     });
 
     // Clear arrays
     this.worldRenderer.crystals = [];
     if (this.worldRenderer.lights) this.worldRenderer.lights = [];
 
-    // The Rift portal stays as the only object
-    this.worldRenderer.portal.position.set(0, 2, -10);
-    this.worldRenderer.portal.userData.name = 'The Rift';
-    this.worldRenderer.portal.userData.url = 'https://rift.riftclaw.com';
+    // Create minimum required objects:
+    // 1. Floor
+    this.createFloor();
+    
+    // 2. The Rift Portal
+    this.createDefaultPortal();
+    
+    // 3. Avatar (player) is handled by mechanics
+
+    // Update scene name
+    this.updateSceneName(sceneName);
 
     // Reset camera
     this.worldRenderer.mechanics.playerPosition.set(0, 1.6, 5);
 
     this.deselectAll();
     this.updateSceneTree();
-    this.updateStatus('New scene created (The Rift portal included)');
+    this.updateStatus(`New scene "${sceneName}" created with floor, avatar, and portal`);
+  }
+
+  createFloor() {
+    const floorGeometry = new THREE.PlaneGeometry(50, 50);
+    const floorMaterial = new THREE.MeshStandardMaterial({
+      color: 0x0a0a15,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    floor.userData = { name: 'Floor', type: 'floor' };
+    this.worldRenderer.scene.add(floor);
+    this.worldRenderer.floor = floor;
+  }
+
+  createDefaultPortal() {
+    const portal = this.worldRenderer.createPortal();
+    portal.position.set(0, 2, -10);
+    portal.userData = {
+      name: 'The Rift',
+      url: 'https://rift.riftclaw.com',
+      type: 'portal'
+    };
+    this.worldRenderer.scene.add(portal);
+    this.worldRenderer.portal = portal;
   }
 
   // New object types (placeholders for now)
@@ -957,7 +1013,7 @@ class SceneEditor {
     });
 
     return {
-      name: 'Limbo',
+      name: this.sceneName,
       version: '1.0',
       exportedAt: new Date().toISOString(),
       objects: objects
@@ -965,6 +1021,11 @@ class SceneEditor {
   }
 
   importSceneData(data) {
+    // Update scene name
+    if (data.name) {
+      this.updateSceneName(data.name);
+    }
+
     // Clear existing objects (except main portal)
     this.getEditableObjects().forEach(obj => {
       if (obj !== this.worldRenderer.portal) {
