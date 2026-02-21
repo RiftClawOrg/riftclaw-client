@@ -359,6 +359,15 @@ class SceneEditor {
     if (this.transformMode === 'translate') this.gizmo = this.translateGizmo;
     else if (this.transformMode === 'rotate') this.gizmo = this.rotateGizmo;
     else if (this.transformMode === 'scale') this.gizmo = this.scaleGizmo;
+    
+    // Make sure gizmo and its children are visible and interactive
+    if (this.gizmo) {
+      this.gizmo.traverse((child) => {
+        if (child.isMesh) {
+          child.visible = true;
+        }
+      });
+    }
   }
 
   showUI() {
@@ -399,26 +408,38 @@ class SceneEditor {
     this.raycaster.setFromCamera(this.mouse, this.worldRenderer.camera);
 
     // Check for gizmo intersection first
-    if (this.gizmo.visible) {
-      const gizmoIntersects = this.raycaster.intersectObjects(this.gizmo.children);
+    if (this.gizmo && this.gizmo.visible) {
+      const gizmoIntersects = this.raycaster.intersectObjects(this.gizmo.children, true);
       if (gizmoIntersects.length > 0) {
-        this.startDrag(gizmoIntersects[0].object.userData.axis);
-        return;
+        // Find the object with axis data (might be a child mesh)
+        let target = gizmoIntersects[0].object;
+        while (target && !target.userData.axis && target.parent) {
+          target = target.parent;
+        }
+        if (target && target.userData.axis) {
+          console.log('[SceneEditor] Clicked gizmo axis:', target.userData.axis);
+          this.startDrag(target.userData.axis);
+          return;
+        }
       }
     }
 
     // Check for object intersection
     const objects = this.getEditableObjects();
+    console.log('[SceneEditor] Click detected, checking', objects.length, 'objects');
     const intersects = this.raycaster.intersectObjects(objects, true);
 
     if (intersects.length > 0) {
       // Find the root object (portal group, crystal, etc.)
       let target = intersects[0].object;
+      console.log('[SceneEditor] Intersected:', target.name || target.type, 'at distance', intersects[0].distance);
       while (target.parent && target.parent !== this.worldRenderer.scene) {
         target = target.parent;
       }
+      console.log('[SceneEditor] Selected root object:', target.userData?.name || target.name || 'unnamed');
       this.selectObject(target);
     } else {
+      console.log('[SceneEditor] No intersection, deselecting');
       this.deselectAll();
     }
   }
@@ -488,11 +509,20 @@ class SceneEditor {
     this.selectedObject = object;
     this.selectedObjects = [object];
 
+    console.log('[SceneEditor] Selecting object:', object.userData?.name || 'unnamed', 'at position:', object.position);
+
     // Show gizmo container at object position
     this.gizmoContainer.position.copy(object.position);
     this.gizmoContainer.rotation.copy(object.rotation);
-    this.updateGizmoVisibility();
+    
+    // Make sure gizmo container is in the scene and visible
+    if (!this.gizmoContainer.parent) {
+      this.worldRenderer.scene.add(this.gizmoContainer);
+    }
     this.gizmoContainer.visible = true;
+    
+    // Update gizmo visibility based on current mode
+    this.updateGizmoVisibility();
 
     // Highlight object
     this.highlightObject(object, true);
@@ -501,7 +531,7 @@ class SceneEditor {
     this.updatePropertiesPanel();
     this.updateSceneTree();
 
-    this.updateStatus(`Selected: ${object.userData.name || 'Object'}`);
+    this.updateStatus(`Selected: ${object.userData?.displayName || object.userData?.name || 'Object'}`);
   }
 
   deselectAll() {

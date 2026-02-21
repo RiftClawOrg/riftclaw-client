@@ -61,19 +61,22 @@ class LimboWorldRenderer {
     this.editor.init();
 
     // Pass canvas events to editor
-    canvas.addEventListener('mousedown', (e) => {
+    // Use pointer events for better compatibility
+    canvas.addEventListener('pointerdown', (e) => {
       if (this.editor?.isActive) {
+        e.preventDefault();
+        e.stopPropagation();
         this.editor.handleClick(e, canvas);
       }
     });
 
-    canvas.addEventListener('mousemove', (e) => {
+    canvas.addEventListener('pointermove', (e) => {
       if (this.editor?.isActive) {
         this.editor.handleDrag(e, canvas);
       }
     });
 
-    canvas.addEventListener('mouseup', () => {
+    canvas.addEventListener('pointerup', () => {
       if (this.editor?.isActive) {
         this.editor.endDrag();
       }
