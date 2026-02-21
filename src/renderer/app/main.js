@@ -74,7 +74,7 @@ async function init() {
   initLimbo();
 
   hideLoading();
-  showToast('Welcome to RiftWalker!', 'success');
+  showToast('Welcome to Limbo!', 'success');
   console.log('[Renderer] Initialization complete');
 }
 
