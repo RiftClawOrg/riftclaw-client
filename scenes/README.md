@@ -2,6 +2,30 @@
 
 This folder contains JSON scene files for RiftWalker worlds.
 
+## Default Scenes
+
+### limbo.json (Default Starting World)
+**Loaded automatically on app start.** This is the starting area for all travelers.
+
+Location: `scenes/limbo.json`
+
+Contains:
+- Floor and grid
+- Portal to The Rift
+- Floating crystals
+- Starfield background
+
+### the-rift.json (The Rift Hub)
+**Used by the portal in Limbo.** This is the central hub connecting all worlds.
+
+Location: `scenes/the-rift.json`
+
+Contains:
+- Multiple portals (Limbo, Arena, Forest, Cyb3r)
+- Floating crystals
+- Starfield background
+- Direction labels
+
 ## File Format
 
 Scenes are stored as JSON files with the following structure:
@@ -29,14 +53,6 @@ Scenes are stored as JSON files with the following structure:
   "portals": [...]
 }
 ```
-
-## Included Scenes
-
-### limbo.json
-The starting area for all travelers. A quiet void with a single portal to The Rift.
-
-### the-rift.json
-The central hub connecting all worlds. Features multiple portals arranged in a circle.
 
 ## Creating New Scenes
 
