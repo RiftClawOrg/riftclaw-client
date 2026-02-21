@@ -69,8 +69,13 @@ npm run dev
 if errorlevel 1 (
     echo.
     echo [ERROR] Failed to start application.
+    echo.
     pause
     exit /b 1
 )
 
-pause
+echo.
+echo [INFO] RiftWalker has closed.
+echo.
+echo Press any key to close this window...
+pause > nul
