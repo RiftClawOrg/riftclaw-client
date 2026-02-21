@@ -156,43 +156,64 @@ class SceneEditor {
   }
 
   setupUIListeners() {
+    const self = this;
+    
+    // Helper to safely add listener
+    const onClick = (id, callback) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          callback();
+        });
+      }
+    };
+
     // Tool mode buttons (in dropdown)
     this.ui.querySelectorAll('[data-mode]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         this.setTransformMode(e.target.dataset.mode);
       });
     });
 
+    // File menu
+    onClick('editor-new', () => this.newScene());
+    onClick('editor-save', () => this.saveScene());
+    onClick('editor-load', () => this.loadScene());
+    onClick('editor-close', () => this.toggle());
+
     // Entities menu
-    document.getElementById('editor-add-portal')?.addEventListener('click', () => this.addPortal());
-    document.getElementById('editor-add-light')?.addEventListener('click', () => this.addLight());
-    document.getElementById('editor-add-particles')?.addEventListener('click', () => this.addParticles());
+    onClick('editor-add-portal', () => this.addPortal());
+    onClick('editor-add-light', () => this.addLight());
+    onClick('editor-add-particles', () => this.addParticles());
 
     // Objects menu
-    document.getElementById('editor-add-crystal')?.addEventListener('click', () => this.addCrystal());
-    document.getElementById('editor-add-platform')?.addEventListener('click', () => this.addPlatform());
-    document.getElementById('editor-add-chair')?.addEventListener('click', () => this.addChair());
-    document.getElementById('editor-add-desk')?.addEventListener('click', () => this.addDesk());
-    document.getElementById('editor-import-model')?.addEventListener('click', () => this.importModel());
+    onClick('editor-add-crystal', () => this.addCrystal());
+    onClick('editor-add-platform', () => this.addPlatform());
+    onClick('editor-add-chair', () => this.addChair());
+    onClick('editor-add-desk', () => this.addDesk());
+    onClick('editor-import-model', () => this.importModel());
 
     // Tools menu
-    document.getElementById('editor-duplicate')?.addEventListener('click', () => this.duplicateSelected());
-    document.getElementById('editor-delete')?.addEventListener('click', () => this.deleteSelected());
-
-    // File menu
-    document.getElementById('editor-new')?.addEventListener('click', () => this.newScene());
-    document.getElementById('editor-save')?.addEventListener('click', () => this.saveScene());
-    document.getElementById('editor-load')?.addEventListener('click', () => this.loadScene());
-    document.getElementById('editor-close')?.addEventListener('click', () => this.toggle());
+    onClick('editor-duplicate', () => this.duplicateSelected());
+    onClick('editor-delete', () => this.deleteSelected());
 
     // View menu
-    document.getElementById('editor-toggle-grid')?.addEventListener('click', () => this.toggleGrid());
-    document.getElementById('editor-toggle-stars')?.addEventListener('click', () => this.toggleStars());
-    document.getElementById('editor-reset-camera')?.addEventListener('click', () => this.resetCamera());
+    onClick('editor-toggle-grid', () => this.toggleGrid());
+    onClick('editor-toggle-stars', () => this.toggleStars());
+    onClick('editor-reset-camera', () => this.resetCamera());
 
     // File inputs
-    document.getElementById('editor-file-input')?.addEventListener('change', (e) => this.handleFileLoad(e));
-    document.getElementById('editor-model-input')?.addEventListener('change', (e) => this.handleModelImport(e));
+    const fileInput = document.getElementById('editor-file-input');
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => this.handleFileLoad(e));
+    }
+    
+    const modelInput = document.getElementById('editor-model-input');
+    if (modelInput) {
+      modelInput.addEventListener('change', (e) => this.handleModelImport(e));
+    }
   }
 
   createGizmo() {
@@ -315,7 +336,11 @@ class SceneEditor {
 
   showUI() {
     this.ui.classList.remove('hidden');
-    this.updateSceneTree();
+    // Force update scene tree and refresh all UI elements
+    setTimeout(() => {
+      this.updateSceneTree();
+      this.updateStatus('Editor active - Select an object to edit');
+    }, 100);
   }
 
   hideUI() {
@@ -822,20 +847,43 @@ class SceneEditor {
   // UI Updates
   updateSceneTree() {
     const tree = document.getElementById('editor-scene-tree');
+    if (!tree) return;
+    
     const objects = this.getEditableObjects();
+
+    // Icon mapping for different object types
+    const getIcon = (type) => {
+      switch(type) {
+        case 'portal': return '🌀';
+        case 'floor': return '⬜';
+        case 'crystal': return '💎';
+        case 'light': return '💡';
+        case 'platform': return '⬜';
+        case 'stars': return '✦';
+        case 'grid': return '⊞';
+        default: return '📦';
+      }
+    };
+
+    if (objects.length === 0) {
+      tree.innerHTML = '<p class="no-selection">No objects in scene</p>';
+      return;
+    }
 
     tree.innerHTML = objects.map((obj, i) => `
       <div class="scene-item ${obj === this.selectedObject ? 'selected' : ''}" data-index="${i}">
-        ${obj.userData.type === 'portal' ? '🌀' : '💎'} 
-        ${obj.userData.name || 'Object'}
+        ${getIcon(obj.userData.type)} ${obj.userData.name || 'Object'}
       </div>
     `).join('');
 
     // Add click handlers
     tree.querySelectorAll('.scene-item').forEach(item => {
-      item.addEventListener('click', () => {
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
         const index = parseInt(item.dataset.index);
-        this.selectObject(objects[index]);
+        if (objects[index]) {
+          this.selectObject(objects[index]);
+        }
       });
     });
   }
