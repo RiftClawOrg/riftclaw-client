@@ -30,6 +30,9 @@ class LimboWorldRenderer {
     canvas.tabIndex = 0;
     this.container.appendChild(canvas);
 
+    // Store canvas reference for editor
+    this.canvas = canvas;
+
     // Three.js setup
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x050510);
@@ -53,6 +56,29 @@ class LimboWorldRenderer {
     // Create player visual
     this.createPlayerVisual();
 
+    // Setup scene editor
+    this.editor = new SceneEditor(this);
+    this.editor.init();
+
+    // Pass canvas events to editor
+    canvas.addEventListener('mousedown', (e) => {
+      if (this.editor?.isActive) {
+        this.editor.handleClick(e, canvas);
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (this.editor?.isActive) {
+        this.editor.handleDrag(e, canvas);
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      if (this.editor?.isActive) {
+        this.editor.endDrag();
+      }
+    });
+
     // Start render loop
     this.animate();
 
@@ -71,7 +97,7 @@ class LimboWorldRenderer {
       emissiveIntensity: 0.5
     });
     this.playerMesh = new THREE.Mesh(geometry, material);
-    this.playerMesh.position.y = 0.9; // Offset so bottom touches ground
+    this.playerMesh.position.y = 0.95; // Slightly raised so bottom touches grid line
     this.scene.add(this.playerMesh);
   }
 
@@ -321,10 +347,15 @@ class LimboWorldRenderer {
         this.playerMesh.position.set(pos.x, pos.y - 0.9, pos.z);
       }
 
-      // Check portal collisions
-      if (this.portal) {
+      // Check portal collisions (only if not in editor)
+      if (this.portal && !this.editor?.isActive) {
         this.mechanics.checkPortalCollisions([this.portal]);
       }
+    }
+
+    // Update editor gizmo animation
+    if (this.editor?.isActive && this.editor.gizmo) {
+      this.editor.gizmo.rotation.y += 0.01;
     }
 
     // Animate stars (slow rotation)

@@ -436,6 +436,14 @@ function setupKeyboardShortcuts() {
         toggleSettings();
         e.preventDefault();
         break;
+      case 'e':
+        // Toggle scene editor (only in Limbo)
+        if (currentWorld === 'Limbo' && limboRenderer?.editor) {
+          const isActive = limboRenderer.editor.toggle();
+          console.log('[Keyboard] Editor toggled:', isActive);
+        }
+        e.preventDefault();
+        break;
       case 'w':
       case 'a':
       case 's':
