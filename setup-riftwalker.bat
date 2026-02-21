@@ -40,14 +40,16 @@ echo ==========================================
 echo    Starting RiftWalker...
 echo ==========================================
 echo.
-echo Press Ctrl+C to stop the server
+echo The client is starting...
+echo This window will stay open.
 echo.
 
-npm run dev
+REM Run npm and wait for it to complete
+call npm run dev
 
 echo.
 echo ==========================================
-echo    RiftWalker stopped
+echo    RiftWalker has closed
 echo ==========================================
 echo.
 pause
