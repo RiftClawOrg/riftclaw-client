@@ -384,6 +384,16 @@ function setupUIListeners() {
   document.getElementById('btn-help')?.addEventListener('click', toggleHelp);
   document.getElementById('btn-close-help')?.addEventListener('click', toggleHelp);
 
+  // Editor button (only works in Limbo)
+  document.getElementById('btn-editor')?.addEventListener('click', () => {
+    if (currentWorld === 'Limbo' && limboRenderer?.editor) {
+      const isActive = limboRenderer.editor.toggle();
+      console.log('[Editor] Toggled via button:', isActive);
+    } else {
+      showToast('Editor only available in Limbo', 'warning');
+    }
+  });
+
   // Chat
   document.getElementById('btn-send-chat').addEventListener('click', sendChat);
   chatInput.addEventListener('keypress', (e) => {
