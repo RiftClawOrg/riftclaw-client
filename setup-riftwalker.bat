@@ -1,13 +1,10 @@
 @echo off
-chcp 65001 >nul
 title RiftClaw Client Setup
 
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                                                              ║
-echo ║     RiftWalker - Client Setup                                ║
-echo ║                                                              ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ==========================================
+echo    RiftWalker - Client Setup
+echo ==========================================
 echo.
 
 REM Check if git is installed
@@ -89,11 +86,9 @@ if errorlevel 1 (
 echo [OK] Dependencies installed
 
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                                                              ║
-echo ║     Setup Complete! Starting RiftWalker...                   ║
-echo ║                                                              ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ==========================================
+echo    Setup Complete! Starting RiftWalker...
+echo ==========================================
 echo.
 echo [INFO] Launching RiftWalker in new window...
 echo [INFO] This window will stay open.
